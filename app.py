@@ -261,10 +261,28 @@ def main():
         layout="wide"
     )
     
-    # 데이터 로드를 맨 앞으로
-    topic_info = pd.read_csv('data/topic_info.csv')
-    with open('data/processed_JPMorganChase_Q3_2024.txt', 'r', encoding='utf-8') as file:
-        text_data = file.read()
+    # 데이터 로드
+    try:
+        # 워드클라우드용 텍스트 파일 로딩
+        with open('data/processed/JPM_2024_Q3_wordcloud.txt', 'r') as file:
+            text_data = file.read()
+            
+        # 토픽 모델링을 위한 텍스트 전처리
+        from utils.preprocessing import preprocess_text, extract_topics
+        processed_text = preprocess_text(text_data)
+        topics = extract_topics([processed_text])
+        
+        # 토픽 정보를 DataFrame으로 변환
+        topic_info = pd.DataFrame([{
+            'Topic_Num': i+1,
+            'Top_Phrases': ' | '.join([term for term, _ in topic['terms']]),
+            'Size': sum([score for _, score in topic['terms']]),
+            'Label': topic['label']
+        } for i, topic in enumerate(topics)])
+        
+    except FileNotFoundError:
+        st.error("필요한 데이터 파일을 찾을 수 없습니다.")
+        return
     
     # CSS 스타일 (기존 것 유지)
     st.markdown("""
@@ -356,7 +374,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # 메인 헤더
+    # 메인 더
     st.markdown("""
         <div class='main-header'>
             <h1 style='margin:0;'>JPMorgan Chase Q3 2024 Earnings Call Analysis</h1>
@@ -503,10 +521,12 @@ def main():
     
     with col1:
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-        st.subheader("📊 Topic Distribution & Key Phrases")
+        st.subheader("📊 Financial Topics Distribution")
+        
+        # 토픽 분포 시각화
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=topic_info['Topic_Num'],
+            x=[f"{row['Label']}<br>Topic {row['Topic_Num']}" for _, row in topic_info.iterrows()],
             y=topic_info['Size'],
             text=topic_info['Top_Phrases'],
             textposition='auto',
@@ -514,8 +534,8 @@ def main():
         ))
         
         fig.update_layout(
-            xaxis_title="Topic Number",
-            yaxis_title="Number of Phrases",
+            xaxis_title="Topics",
+            yaxis_title="Importance Score",
             height=400,
             plot_bgcolor='#2d2d2d',
             paper_bgcolor='#2d2d2d',
@@ -545,15 +565,9 @@ def main():
     
     # 네트워크 맵
     st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-    st.subheader("🔄 Topic-Phrase Network")
-    network_fig = create_topic_network(topic_info)
-    network_fig.update_layout(
-        plot_bgcolor='#2d2d2d',
-        paper_bgcolor='#2d2d2d',
-        font=dict(color='white'),
-        margin=dict(t=30),
-        height=600
-    )
+    st.subheader("🔄 Financial Topic Network")
+    from utils.visualization import create_topic_network
+    network_fig = create_topic_network(topics)
     st.plotly_chart(network_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
     

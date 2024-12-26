@@ -1,0 +1,79 @@
+Operator
+
+Good morning, ladies and gentlemen. Welcome to JPMorgan Chase's Third Quarter 2023 Earnings Call. This call is being recorded. Your line will be muted for the duration of the call. We will now go live to the presentation. Please standby.
+
+At this time, I would like to turn the call over to JPMorgan Chase's Chief Financial Officer, Jeremy Barnum; and their Chairman and CEO, Jamie Dimon. Mr. Dimon, please go ahead.
+
+Jamie Dimon
+
+Chairman Of The Board And Chief Executive Officer at JPMorgan Chase & Co.
+
+Hey. Good morning, everybody. Before we start the actual call, I want to repeat something we just said on the press call. So before we get into the discussion about third quarter earnings, I just want to say how deeply saddened that we all are about the recent horrific attacks on Israel and the resulting bloodshed and more. Terrorism and hatred have no place in our civilized world, and all of our hearts here at JPMorgan Chase go out to all who are suffering.
+
+Jeremy Barnum
+
+Chief Financial Officer at JPMorgan Chase & Co.
+
+Thanks, Jamie. And of course, I very much echo the sentiment.
+
+Now let's turn to our third quarter earnings results. The presentation is available on our website, and please refer to the disclaimer in the back.
+
+Starting on Page 1, the firm reported net income of $13.2 billion, EPS of $4.33 and revenue of $40.7 billion, and delivered an ROTCE of 22%. These results included $669 million of net investment securities losses in Corporate and $665 million of firmwide legal expense.
+
+On Page 2, we have some more detail. Similar to last quarter, we have called out the impact of First Republic were relevant. For this quarter, First Republic contributed $2.2 billion of revenue, $858 million of expense and $1.1 billion of net income.
+
+Now focusing on the firmwide results, excluding First Republic, revenue of $38.5 billion was up $5 billion or 15% year-on-year. NII, ex-Markets, was up $4.8 billion or 28%, driven by higher rates and higher revolving balances in Card, partially offset by lower deposit balances. NIR, ex-Markets, was up $374 million or 4%, which included lower net investment securities losses than the prior year. And Markets revenue was down $190 million or 3% year-on-year.
+
+Expenses of $20.9 billion were up $1.7 billion or 9% year-on-year, primarily driven by ongoing growth and front-office and technology staffing, as well as wage inflation and higher legal expense. And credit costs were $1.4 billion, predominantly driven by net charge-offs in Card, and included a $102 million net reserve release, driven by changes in the central scenario, primarily offset by card loan growth.
+
+On to balance sheet and capital on Page 3. We ended the quarter with a CET1 ratio of 14.3%, up about 50 basis points versus the prior quarter as the benefit of net income less capital distributions was partially offset by AOCI. We had $2 billion of net share repurchases this quarter and the pace of buybacks will likely remain modest in light of the Basel III Endgame proposal. In line with our capital hierarchy, we will continue to reassess the buyback trajectory as circumstances evolve or opportunities emerge.
+
+And on the topic of the Basel III Endgame, you'll see that we added a couple of pages on it. So, let's cover that now, starting on Page 4. Given the significance of this proposal for us, the broader industry as well as households and businesses as end-users, we thought it was important to spend time discussing it. And while we know there is interest in having us quantify the expected impact of this proposal and a lot of granular detail, it's important to start by asking why the proposed increase is so large given the repeated statement over time by policymakers that banks are well-capitalized and well-positioned to deal with stress. Given that context, the absence of detailed analysis supporting a capital increase of this magnitude is disconcerting and there's a lot that does not make sense to us.
+
+Starting with RWA. We've already said we expect the firm's RWA to increase by around 30% or $500 billion, which results in capital requirements increasing by about 25% or $50 billion. One immediate thing to point out is that at 4.5% GSIB, a $500 billion increase in RWA requires $22.5 billion of additional capital with no change in our systemic risk footprint. We've been on the record for a long time that GSIB was conceptually flawed and misscalibrated originally. Since implementation, the failure to address economic growth despite the Fed themselves acknowledging this problem at the outset has made matters worse. And now all of those problems are being applied to an additional $500 billion of RWA. Our view is that the combined proposals could have adjusted the surcharge levels to keep dollars of capital associated GSIB buffer constant rather than simply multiplying the RWA increase by the existing surcharges.
+
+Another lens on the proposed increases is the introduction of RWA for operational risk and its clear overlap with op risk losses already capitalized through the Stress Capital Buffer. Although there is limited disclosure from the Fed on this point, we have estimated that we have about $15 billion of operational risk capital embedded in the SCB based on the information the Fed does disclose. Once we capitalize for this new op risk RWA, our required capital will go up by around $30 billion without any change to our portfolio.
+
+Now let's turn to Page 5, which shows the impact of the actual and proposed capital rules over the last few years. Zooming out from the details of this most recent proposal, this page reminds us of what's happened since 2017. Since then, SA-CCR and the Stress Capital Buffer have been adopted and our GSIB surcharge will increase to 4.5%. So assuming the Basel III Endgame and GSIB proposals are finalized in their current form, we would see a 45% increase in our capital requirements relative to that 2017 starting point. This illustrates again how overcalibrated these proposals are and it's not done yet. We still expect the Fed to incorporate CECL into CCAR, which will likely increase the SCB. And of course, given the absence of a fixed to the GSIB clause, it continues to present a headwind into the indefinite future. And aside from those dynamics, there remains the long-standing issue of procyclicality in the overall capital footprint.
+
+We think it's also important to point out that the agencies did actually have a choice here. While it may technically be true that the proposal is Basel compliant, Basel compliant does not mandate a 25% increase in capital requirements. Implementing the Basel III Endgame consistently with how the Europeans have by retaining credit risk modeling and also addressing the compounding effects of GSIB and SCB would have achieved Basel without creating this unnecessary increase in capital requirements.
+
+As you would expect, we will continue to engage and forcefully advocate during the comment period and beyond in a great deal of technical detail. For the purposes of this call, we wanted to make the equally important broader plans about both the level of capital increase and the flaws in the construct of the framework itself since coherent design is critical to the framework's durability over time. The current proposal exacerbates existing features that discourage beneficial scale and diversification. If it goes through as written, there will likely be significant impacts on pricing and availability of credit for businesses and consumers.
+
+In addition, the ongoing and persistent increase in the regulatory cost of market-making for banks suggests that the regulators want dramatic changes to the current operation of the US capital markets. We believe that well- regulated market makers that are committed to deploying capital to clients on a principal basis are a critical building block supporting the breadth, depth and resilience of the American capital markets, which is vital to the US economy. So caution is warranted when proposing changes of this magnitude.
+
+With that, we go to our businesses, starting with CCB on Page 6. Consumer spend growth has now reverted to pre-pandemic trends with nominal spend per customer stable and relatively flat year-on-year. Cash buffers continue to normalize to pre-pandemic levels with lower income groups normalizing faster.
+
+Turning now to the financial results, excluding First Republic. CCB reported net income of $5.3 billion on revenue of $17 billion, which was up 19% year- on-year. In Banking & Wealth Management, revenue was up 30% year-on-year, driven by higher NII on higher rates. End-of-period deposits were down 3% quarter-on-quarter. We ranked number one in retail deposit share based on FDIC data and continue to solidify our leadership position in key markets. Client investment assets were up 21% year-on-year, driven by market performance and strong net inflows as we continue to capture yield-seeking flows from our consumer banking customers. In Home Lending, revenue was down 2% year-on-year given a smaller market. Originations of $10.3 billion were up slightly quarter-on-quarter, but they remain down 15% year-on-year.
+
+Moving to Card Services & Auto, revenue was up 7% year-on-year, driven by higher Card Services NII on higher revolving balances, partially offset by lower Auto lease income. Card outstandings were up 16% year-on-year due to strong account acquisition and continued normalization for both. And in Auto, originations were $10.2 billion, up 36% year-on-year as we saw competitors pull back and we gained market share.
+
+Expenses of $8.5 billion were up 7% year-on-year, largely driven by continued investments in staffing, primarily in front office and technology.
+
+In terms of credit performance this quarter, credit costs were $1.4 billion, driven by net charge-offs, which were up $720 million year-on-year, predominantly due to continued normalization in Card. The net reserve build of $49 million reflected a $301 million build in Card services, primarily offset by a $250 million release in Home Lending.
+
+Next, the CIB on Page 7. CIB reported net income of $3.1 billion on revenue of $11.7 billion. Investment Banking revenue of $1.6 billion was down 6% year-on- year. IB fees were down 3% year-on-year and we ranked number one with a year- to-date wallet share of 8.6%, In advisory, fees were down 10%. Underwriting fees were up 8% for debt and down 6% for equity.
+
+In terms of the outlook, we're encouraged by the level of capital markets activity in September, and we have a healthy pipeline going into the fourth quarter. Advisory has also picked up compared to the first half, but year-to- date announced M&A remains down significantly, which will continue to be a headwind.
+
+Payments revenue was $2.1 billion, up 3% year-on-year. Excluding equity investments, it was up 12%, driven by higher rates, partially offset by lower deposit balances.
+
+Moving to Markets. Total revenue was $6.6 billion down 3% year-on-year against a very strong third quarter last year. Fixed income was up 1%, driven by an increase in financing and trading activity and securitized products as well as improved performance in credit. This was predominantly offset by currencies in emerging markets coming off a very strong quarter last year. Equity Markets was down 10%, reflecting lower revenues across products compared to a strong prior-year quarter as activity was challenged by lower volatility.
+
+Securities Services revenue of $1.2 billion was up 9% year-on-year, driven by higher rates, partially offset by lower deposit balances. Expenses of $7.4 billion were up 11% year-on-year, predominantly driven by higher legal expense and wage inflation. Credit costs were net benefit of $185 million, driven by a net reserve release of $230 million, reflecting the impact of net lending activity and net charge-offs of $45 million.
+
+Moving to the Commercial Bank on Page 8. Commercial Banking reported net income of $1.7 billion. Revenue of $3.7 billion was up 20% year-on-year with payments revenue of $2 billion, up 30% year-on-year, driven by higher rates, and gross Investment Banking and Markets revenue of $821 million was up 8% year-on-year, reflecting increased M&A volume. Expenses of $1.4 billion were up 15% year-on-year, largely driven by an increase in headcount including front office and technology investments, as well as higher-volume related expense, including the impact of new client acquisition. Average deposits were down 7% year-on-year and 5% quarter-on-quarter, primarily driven by lower non- operating deposits as clients opt for higher-yielding alternatives.
+
+Loans were up 1% quarter-on-quarter. C&I loans were flat, reflecting continued stabilization in new loan demand and revolver utilization. And CRE loans were up 1%, reflecting funding of prior year originations in real-estate banking as well as lower pay-off activity. Finally, credit costs were $64 million, including net charge-offs of $50 million and a net reserve build of $14 million.
+
+Then to complete our lines of business, AWM, on Page 9. Asset & Wealth Management reported net income of $1.1 billion with a pretax margin of 31%. Revenue of $4.6 billion was relatively flat year-on-year as higher management fees on strong net inflows and higher average market levels were offset by lower performance fees and lower NII from deposits. Expenses of $3.1 billion were up 3% year-on-year, driven by continued growth in our private banking advisor teams and the impact of closing the J.P. Morgan Asset Management China and Global Shares acquisitions.
+
+For the quarter, net long-term inflows were $20 billion, positive across all asset classes led by equities. And in liquidity, we saw net inflows of $40 billion. AUM of $3.2 trillion was up 22% year-on-year and client assets of $4.6 trillion were up 21% year-on-year, driven by continued net inflows and higher market levels. Finally, loans were flat quarter-on-quarter, while deposits were down 5%, driven by migration to investments, partially offset by client inflows.
+
+Turning to Corporate on Page 10. Corporate reported net income of $911 million. Revenue was $1.5 billion, up $1.8 billion compared to last year. NII was $2 billion, up $1.2 billion year-on-year due to the impact of higher rates. And NIR was a net loss of $506 million and included the net investment securities losses I mentioned upfront. Expenses of $456 million were up $151 million year-on-year.
+
+To finish, we have the outlook on Page 11. We now expect 2023 NII and NII ex- Markets to be approximately $88.5 billion and $89 billion, respectively, with the increase driven by slower reprice than previously assumed. Consistent with what we've been saying throughout the year, while we don't know when it will normalize, we do not consider this level of NII to be sustainable. Our outlook for 2023 adjusted expense is now approximately $84 billion. And as a reminder, this is on an adjusted basis, which excludes legal expense. Also, remember, this outlook excludes the pending FDIC special assessment. And on Credit, we now expect the 2023 Card net charge-off rate to be approximately 2.5%, mostly driven by denominator effects due to recent balance growth.
+
+So to wrap up, we're pleased with another quarter of strong operating results. Throughout the year, we've been pointing out the various sources of significant uncertainty. And all of those, including the geopolitical situation, economic outlook, rate environment, deposit reprice and the impact of the Basel III Endgame proposal are as prominent now as they have been in the recent past. But as always, we continue to prepare for a range of scenarios and are focused on being there for our clients and customers when they need us most.
+
+And with that, let's open the line for Q&A.
