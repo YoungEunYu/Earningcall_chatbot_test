@@ -263,25 +263,25 @@ def main():
     
     # 데이터 로드
     try:
-        # 워드클라우드용 텍스트 파일 로딩
-        with open('data/processed/JPM_2024_Q3_wordcloud.txt', 'r') as file:
-            text_data = file.read()
-            
-        # 토픽 모델링을 위한 텍스트 전처리
-        from utils.preprocessing import preprocess_text, extract_topics
-        processed_text = preprocess_text(text_data)
-        topics = extract_topics([processed_text])
+        # 1년치 어닝콜 데이터 로드
+        from utils.preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
+        earnings_calls = load_earnings_calls()
         
-        # 토픽 정보를 DataFrame으로 변환
-        topic_info = pd.DataFrame([{
-            'Topic_Num': i+1,
-            'Top_Phrases': ' | '.join([term for term, _ in topic['terms']]),
-            'Size': sum([score for _, score in topic['terms']]),
-            'Label': topic['label']
-        } for i, topic in enumerate(topics)])
+        # 토픽 트렌드 분석
+        topic_trends = analyze_topic_trends(earnings_calls)
+        
+        # 최신 데이터의 토픽 정보
+        latest_call = earnings_calls.iloc[-1]
+        text_data = latest_call['text']
+        
+        # 최신 데이터의 토픽 추출
+        topics = extract_topics([text_data])
         
     except FileNotFoundError:
         st.error("필요한 데이터 파일을 찾을 수 없습니다.")
+        return
+    except Exception as e:
+        st.error(f"Error processing data: {str(e)}")
         return
     
     # CSS 스타일 (기존 것 유지)
@@ -454,11 +454,11 @@ def main():
                 st.markdown(message["content"])
         
         context = f"""
-        Topics and key phrases from the earnings call:
-        {topic_info['Top_Phrases'].to_string()}
+        Topics and key phrases from the earnings calls:
+        {topic_trends.to_string()}
         
-        Main discussion points based on topic sizes:
-        {topic_info[['Topic_Num', 'Size', 'Top_Phrases']].to_string()}
+        Main discussion points from the latest earnings call:
+        {text_data[:500]}...
         """
         
         if prompt := st.chat_input("Ask about the earnings call..."):
@@ -490,7 +490,7 @@ def main():
                 <div class='metric-value'>{}</div>
                 <div class='metric-label'>Topics Identified</div>
             </div>
-        """.format(len(topic_info)), unsafe_allow_html=True)
+        """.format(len(topic_trends['topic'].unique())), unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
@@ -498,7 +498,7 @@ def main():
                 <div class='metric-value'>{}</div>
                 <div class='metric-label'>Total Phrases Analyzed</div>
             </div>
-        """.format(topic_info['Size'].sum()), unsafe_allow_html=True)
+        """.format(len(topic_trends)), unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
@@ -506,7 +506,7 @@ def main():
                 <div class='metric-value'>{}</div>
                 <div class='metric-label'>Key Topics</div>
             </div>
-        """.format(len(topic_info[topic_info['Size'] > topic_info['Size'].mean()])), unsafe_allow_html=True)
+        """.format(len(topic_trends[topic_trends['coherence'] > topic_trends['coherence'].mean()])), unsafe_allow_html=True)
     
     with col4:
         st.markdown("""
@@ -521,39 +521,99 @@ def main():
     
     with col1:
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-        st.subheader("📊 Financial Topics Distribution")
+        st.subheader("📊 Financial Topics Evolution")
         
-        # 토픽 분포 시각화
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=[f"{row['Label']}<br>Topic {row['Topic_Num']}" for _, row in topic_info.iterrows()],
-            y=topic_info['Size'],
-            text=topic_info['Top_Phrases'],
-            textposition='auto',
-            marker_color='#0066ff'
-        ))
+        # 시간�� 따른 토픽 트렌드 시각화
+        topic_trend_fig = go.Figure()
         
-        fig.update_layout(
-            xaxis_title="Topics",
-            yaxis_title="Importance Score",
+        for topic in topic_trends['topic'].unique():
+            topic_data = topic_trends[topic_trends['topic'] == topic]
+            
+            topic_trend_fig.add_trace(go.Scatter(
+                x=topic_data['date'],
+                y=topic_data['coherence'],
+                name=topic,
+                mode='lines+markers',
+                hovertemplate=
+                "<b>%{x}</b><br>" +
+                "Coherence: %{y:.2f}<br>" +
+                "Topic: " + topic + "<br>" +
+                "<extra></extra>"
+            ))
+        
+        topic_trend_fig.update_layout(
+            xaxis_title="Earnings Call Date",
+            yaxis_title="Topic Coherence",
             height=400,
             plot_bgcolor='#2d2d2d',
             paper_bgcolor='#2d2d2d',
             font=dict(color='white'),
-            margin=dict(t=30)
+            margin=dict(t=30),
+            hovermode='x unified',
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01,
+                bgcolor="rgba(0,0,0,0.5)"
+            )
         )
-        st.plotly_chart(fig, use_container_width=True)
+        
+        st.plotly_chart(topic_trend_fig, use_container_width=True)
+        
+        # 토픽별 주요 구절 표시
+        st.markdown("### Key Phrases by Topic")
+        for topic in topic_trends['topic'].unique():
+            topic_data = topic_trends[topic_trends['topic'] == topic].iloc[-1]
+            terms = [term for term, _ in eval(str(topic_data['terms']))]
+            
+            st.markdown(f"""
+                <div style='background: #363636; padding: 10px; border-radius: 5px; margin: 5px 0;'>
+                    <b>{topic}</b>: {', '.join(terms[:5])}
+                </div>
+            """, unsafe_allow_html=True)
+            
         st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
         st.subheader("☁️ Word Cloud")
+        
+        # NLTK 불용어 로드
+        from nltk.corpus import stopwords
+        nltk_stopwords = set(stopwords.words('english'))
+        
+        # 커스텀 불용어와 NLTK 불용어 결합
+        custom_stopwords = {
+            'billion', 'million', 'year', 'quarter', 'jpmorgan', 'chase', 
+            'thank', 'thanks', 'please', 'good', 'morning', 'jamie', 'dimon',
+            'jeremy', 'barnum', 'operator', 'next', 'question', 'call',
+            'earnings', 'first', 'second', 'third', 'fourth', 'q1', 'q2', 'q3', 'q4',
+            'percent', 'percentage', 'basis', 'point', 'points', 'would', 'could',
+            'may', 'might', 'must', 'need', 'say', 'said', 'well', 'look', 'see'
+        }
+        
+        all_stopwords = nltk_stopwords.union(custom_stopwords)
+        
+        # 텍스트 전처리
+        cleaned_text = ' '.join([word for word in text_data.lower().split() 
+                               if word not in all_stopwords 
+                               and len(word) > 2  # 짧은 단어 제거
+                               and not word.isdigit()])  # 숫자 제거
+        
         wordcloud = WordCloud(
             width=800,
             height=400,
             background_color='#2d2d2d',
-            colormap='Blues'
-        ).generate(text_data)
+            colormap='Blues',
+            stopwords=all_stopwords,
+            min_font_size=10,
+            max_font_size=50,
+            random_state=42,
+            collocations=True,  # 연어(자주 함께 나타나는 단어) 포함
+            normalize_plurals=True  # 복수형 정규화
+        ).generate(cleaned_text)
         
         fig, ax = plt.subplots(figsize=(10,6))
         ax.imshow(wordcloud)
@@ -566,9 +626,14 @@ def main():
     # 네트워크 맵
     st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
     st.subheader("🔄 Financial Topic Network")
-    from utils.visualization import create_topic_network
-    network_fig = create_topic_network(topics)
-    st.plotly_chart(network_fig, use_container_width=True)
+    
+    try:
+        from utils.visualization import create_topic_network
+        network_fig = create_topic_network(topics)
+        st.plotly_chart(network_fig, use_container_width=True)
+    except Exception as e:
+        st.error(f"Error creating network visualization: {str(e)}")
+    
     st.markdown("</div>", unsafe_allow_html=True)
     
     # 새로운 시각화 섹션 추가 (차트 영역 다음에)
