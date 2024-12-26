@@ -284,6 +284,25 @@ def main():
         st.error(f"Error processing data: {str(e)}")
         return
     
+    # # 현재 작업 디렉토리 확인
+    # st.write(f"Current working directory: {os.getcwd()}")
+
+    # # Q4 2023 파일 절대 경로
+    # q4_path = os.path.abspath('data/raw/JPM_2023_Q4.txt')
+    # st.write(f"Q4 2023 absolute path: {q4_path}")
+
+    # # 파일 존재 여부 확인
+    # st.write(f"File exists: {os.path.exists(q4_path)}")
+
+    # # 파일 크기 확인
+    # st.write(f"File size: {os.path.getsize(q4_path)} bytes")
+
+    # # 파일 내용 직접 읽기
+    # with open(q4_path, 'r', encoding='utf-8') as f:
+    #     content = f.read()
+    #     st.write(f"Content length: {len(content)}")
+    #     st.write("First 100 characters:", content[:100])
+    
     # CSS 스타일 (기존 것 유지)
     st.markdown("""
         <style>
@@ -374,7 +393,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # 메인 더
+    # 메인 
     st.markdown("""
         <div class='main-header'>
             <h1 style='margin:0;'>JPMorgan Chase Q3 2024 Earnings Call Analysis</h1>
@@ -523,7 +542,7 @@ def main():
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
         st.subheader("📊 Financial Topics Evolution")
         
-        # 시간�� 따른 토픽 트렌드 시각화
+        # 시간 순 토픽 트렌드 시각화
         topic_trend_fig = go.Figure()
         
         for topic in topic_trends['topic'].unique():
@@ -578,49 +597,125 @@ def main():
     
     with col2:
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-        st.subheader("☁️ Word Cloud")
+        st.subheader("☁️ AI-Powered Word Cloud")
         
-        # NLTK 불용어 로드
-        from nltk.corpus import stopwords
-        nltk_stopwords = set(stopwords.words('english'))
-        
-        # 커스텀 불용어와 NLTK 불용어 결합
-        custom_stopwords = {
-            'billion', 'million', 'year', 'quarter', 'jpmorgan', 'chase', 
-            'thank', 'thanks', 'please', 'good', 'morning', 'jamie', 'dimon',
-            'jeremy', 'barnum', 'operator', 'next', 'question', 'call',
-            'earnings', 'first', 'second', 'third', 'fourth', 'q1', 'q2', 'q3', 'q4',
-            'percent', 'percentage', 'basis', 'point', 'points', 'would', 'could',
-            'may', 'might', 'must', 'need', 'say', 'said', 'well', 'look', 'see'
+        def get_ai_keywords(text, period_type="quarterly"):
+            """GPT를 사용하여 핵심 키워드와 가중치 추출"""
+            try:
+                prompt = f"""Analyze this earnings call transcript and create a word cloud representation.
+
+                Task:
+                1. Extract the most significant financial terms and insights
+                2. Return only the keywords with their importance weights
+                3. Focus on {period_type} performance and trends
+                4. Remove all common words, numbers, and company names
+                5. Combine related concepts into compound terms (e.g., 'credit_quality', 'market_share')
+
+                Format your response ONLY as:
+                keyword1:weight
+                keyword2:weight
+                (weights from 1-10, higher = more important)
+
+                Transcript: {text[:4000]}...
+                """
+                
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a financial analyst creating concise keyword representations of earnings calls."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=500
+                )
+                
+                # GPT 응답을 딕셔너리로 변환
+                keywords = {}
+                for line in response.choices[0].message.content.strip().split('\n'):
+                    if ':' in line:
+                        word, weight = line.strip().split(':')
+                        keywords[word.strip()] = int(weight)
+                
+                return keywords
+                
+            except Exception as e:
+                st.error(f"Error in AI analysis: {str(e)}")
+                return {}
+
+        # 분기별 데이터 로드
+        quarterly_files = {
+            'Q3 2024': 'data/raw/JPM_2024_Q3.txt',
+            'Q2 2024': 'data/raw/JPM_2024_Q2.txt',
+            'Q1 2024': 'data/raw/JPM_2024_Q1.txt',
+            'Q4 2023': 'data/raw/JPM_2023_Q4.txt'
         }
         
-        all_stopwords = nltk_stopwords.union(custom_stopwords)
+        # 탭 생성
+        tabs = st.tabs(list(quarterly_files.keys()) + ["Yearly View"])
         
-        # 텍스트 전처리
-        cleaned_text = ' '.join([word for word in text_data.lower().split() 
-                               if word not in all_stopwords 
-                               and len(word) > 2  # 짧은 단어 제거
-                               and not word.isdigit()])  # 숫자 제거
+        # 전체 텍스트 저장 (yearly view용)
+        all_texts = []
         
-        wordcloud = WordCloud(
-            width=800,
-            height=400,
-            background_color='#2d2d2d',
-            colormap='Blues',
-            stopwords=all_stopwords,
-            min_font_size=10,
-            max_font_size=50,
-            random_state=42,
-            collocations=True,  # 연어(자주 함께 나타나는 단어) 포함
-            normalize_plurals=True  # 복수형 정규화
-        ).generate(cleaned_text)
+        # 분기별 탭 처리
+        for quarter, filepath in quarterly_files.items():
+            try:
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    quarter_text = file.read().strip()
+                    
+                if quarter_text:
+                    all_texts.append(quarter_text)
+                    
+                    # 해당 분기 탭에서 워드클라우드 표시
+                    with tabs[list(quarterly_files.keys()).index(quarter)]:
+                        st.caption(f"AI Analysis of {quarter} Earnings Call")
+                        keywords = get_ai_keywords(quarter_text, "quarterly")
+                        
+                        if keywords:
+                            wordcloud = WordCloud(
+                                width=800,
+                                height=400,
+                                background_color='#2d2d2d',
+                                colormap='Blues',
+                                prefer_horizontal=0.7,
+                                min_font_size=10,
+                                max_font_size=50
+                            ).generate_from_frequencies(keywords)
+                            
+                            fig, ax = plt.subplots(figsize=(10,6))
+                            ax.imshow(wordcloud)
+                            ax.axis('off')
+                            ax.set_facecolor('#2d2d2d')
+                            fig.patch.set_facecolor('#2d2d2d')
+                            st.pyplot(fig)
+                            
+            except Exception as e:
+                st.error(f"Error processing {quarter}")
         
-        fig, ax = plt.subplots(figsize=(10,6))
-        ax.imshow(wordcloud)
-        ax.axis('off')
-        ax.set_facecolor('#2d2d2d')
-        fig.patch.set_facecolor('#2d2d2d')
-        st.pyplot(fig)
+        # Yearly View 탭
+        with tabs[-1]:
+            if all_texts:
+                st.caption("AI Analysis of Full Year Earnings Calls")
+                yearly_text = " ".join(all_texts)
+                yearly_keywords = get_ai_keywords(yearly_text, "yearly")
+                
+                if yearly_keywords:
+                    wordcloud = WordCloud(
+                        width=800,
+                        height=400,
+                        background_color='#2d2d2d',
+                        colormap='Blues',
+                        prefer_horizontal=0.7,
+                        min_font_size=10,
+                        max_font_size=50
+                    ).generate_from_frequencies(yearly_keywords)
+                    
+                    fig, ax = plt.subplots(figsize=(10,6))
+                    ax.imshow(wordcloud)
+                    ax.axis('off')
+                    ax.set_facecolor('#2d2d2d')
+                    fig.patch.set_facecolor('#2d2d2d')
+                    st.pyplot(fig)
+        
         st.markdown("</div>", unsafe_allow_html=True)
     
     # 네트워크 맵
