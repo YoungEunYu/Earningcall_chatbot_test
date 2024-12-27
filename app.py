@@ -7,6 +7,20 @@ import matplotlib.pyplot as plt
 from openai import OpenAI
 import os
 import plotly.express as px
+import sys
+from pathlib import Path
+
+# 현로젝트 루트 디렉토리를 Python 경로에 추가
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
+
+# temporal_analysis.py에서 직접 함수 import
+try:
+    from utils.temporal_analysis import extract_temporal_data, identify_key_events
+except ImportError as e:
+    print(f"Import Error: {e}")
+    print(f"Current directory: {current_dir}")
+    print(f"Python path: {sys.path}")
 
 # OpenAI 클라이언트 설정
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
@@ -259,11 +273,54 @@ def create_enhanced_network():
     
     return network_fig
 
+def create_temporal_sentiment_viz(transcript_data):
+    """어닝콜 감성 분석 시각화"""
+    
+    # 데이터 추출
+    temporal_df = extract_temporal_data(transcript_data)
+    
+    if temporal_df.empty:
+        st.warning("No data could be extracted from the transcript.")
+        return
+
+    # 시간순 감성 추이 그래프
+    fig = go.Figure()
+    
+    # 전체 어닝콜의 시간순 감성 점수
+    fig.add_trace(go.Scatter(
+        x=temporal_df.index,
+        y=temporal_df['sentiment_score'].rolling(window=5).mean(),
+        mode='lines',
+        name='Sentiment Trend',
+        line=dict(color='lightblue', width=2),
+        hovertemplate="Time: %{x}<br>Sentiment: %{y:.2f}<br><extra></extra>"
+    ))
+
+    # 레이아웃 설정
+    fig.update_layout(
+        title="Earnings Call Sentiment Trend",
+        xaxis_title="Time",
+        yaxis_title="Sentiment Score",
+        plot_bgcolor='#2d2d2d',
+        paper_bgcolor='#2d2d2d',
+        font=dict(color='white'),
+        height=300,
+        margin=dict(t=30, l=60, r=30, b=60)
+    )
+
+    # y축 범위 설정 (-1 ~ 1)
+    fig.update_yaxes(range=[-1, 1])
+
+    # Jeremy Barnum의 발언 추출
+    barnum_statements = temporal_df[temporal_df['speaker'].str.contains('Barnum', case=False, na=False)]
+
+    return fig, barnum_statements
+
 def main():
     # 페이지 설정
     st.set_page_config(
         page_title="JPM Earnings Call Analysis",
-        page_icon="📊",
+        page_icon="",
         layout="wide"
     )
     
@@ -297,7 +354,7 @@ def main():
     # q4_path = os.path.abspath('data/raw/JPM_2023_Q4.txt')
     # st.write(f"Q4 2023 absolute path: {q4_path}")
 
-    # # 파일 존재 여부 확인
+    # # 파일 존 여부 확인
     # st.write(f"File exists: {os.path.exists(q4_path)}")
 
     # # 파일 크기 확인
@@ -462,7 +519,7 @@ def main():
         </div>
     """.format(core_metrics, future_outlook, strategy_risks), unsafe_allow_html=True)
     
-    # 사이드바 챗봇
+    # 사드바 챗봇
     with st.sidebar:
         st.markdown("""
             <div style='padding: 1rem; background: linear-gradient(180deg, #0033cc 0%, #0066ff 100%); 
@@ -606,7 +663,7 @@ def main():
         st.subheader("☁️ AI-Powered Word Cloud")
         
         def get_ai_keywords(text, period_type="quarterly"):
-            """GPT를 사용하여 핵심 키워드와 가중치 추출"""
+            """GPT를 사용하여 핵식 키워드와 가중치 추출"""
             if not USE_GPT:
                 # GPT 비활성화 시 기본 키워드 추출 로직 추가
                 # 예시: 간단한 키워드 추출 로직
@@ -665,7 +722,7 @@ def main():
         # 탭 생성
         tabs = st.tabs(list(quarterly_files.keys()) + ["Yearly View"])
         
-        # 전체 텍스트 저장 (yearly view용)
+        # 전체 텍스트 저장 (yearly view)
         all_texts = []
         
         # 분기별 탭 처리
@@ -677,7 +734,7 @@ def main():
                 if quarter_text:
                     all_texts.append(quarter_text)
                     
-                    # 해당 분기 탭에서 워드클라우드 표시
+                    # 해당 분기 탭에서 워드클라우드 ���시
                     with tabs[list(quarterly_files.keys()).index(quarter)]:
                         st.caption(f"AI Analysis of {quarter} Earnings Call")
                         keywords = get_ai_keywords(quarter_text, "quarterly")
@@ -775,7 +832,7 @@ def main():
     # 시계열 데이터 시각화
     time_series_fig = go.Figure()
 
-    # 각 금융 지표에 대해 시계열 그래프 추가
+    # 각 융 지표 대해 시계열 그래프 추가
     for metric in ['revenue', 'profit', 'expenses']:  # 예시로 수익, 이익, 비용 지표 사용
         time_series_fig.add_trace(go.Scatter(
             x=time_series_data['date'],
@@ -800,6 +857,64 @@ def main():
 
     # 시각화 출력
     st.plotly_chart(time_series_fig, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 발언자 감성 분석 섹션
+    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+    st.subheader("👥 Speaker Sentiment Analysis")
+
+    # 발언자 목록과 데이터 가져오기
+    speakers, temporal_data = create_temporal_sentiment_viz(text_data)
+
+    if speakers:
+        # 발언자 선택
+        selected_speaker = st.selectbox(
+            "Select a speaker to view their statements and sentiment scores:",
+            speakers
+        )
+
+        # 선택된 발언자의 발언 표시
+        if selected_speaker:
+            speaker_data = temporal_data[temporal_data['speaker'] == selected_speaker]
+            
+            # 발언별 감성 점수와 텍스트 표시 (4단어 초과인 발언만)
+            for _, row in speaker_data.iterrows():
+                text = row['text'].strip()
+                # 4단어 초과인 발언만 표시
+                if len(text.split()) > 4:
+                    with st.expander(f"Sentiment Score: {row['sentiment_score']:.3f}"):
+                        st.write(text)
+                    st.markdown("---")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 감성 분석 섹션
+    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+    st.subheader("🎭 Earnings Call Sentiment Analysis")
+
+    # 감성 분석 시각화 생성
+    sentiment_fig, barnum_data = create_temporal_sentiment_viz(text_data)
+
+    # 감성 추이 그래프 표시
+    st.plotly_chart(sentiment_fig, use_container_width=True)
+
+    # Jeremy Barnum의 발언 표시
+    st.subheader("CFO Jeremy Barnum's Statements")
+    
+    if not barnum_data.empty:
+        for _, row in barnum_data.iterrows():
+            text = row['text'].strip()
+            # 4단어 초과인 발언만 표시
+            if len(text.split()) > 4:
+                st.markdown(f"""
+                    <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
+                        <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {row['sentiment_score']:.3f}</div>
+                        <div>{text}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.info("No statements found from Jeremy Barnum in this transcript.")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
