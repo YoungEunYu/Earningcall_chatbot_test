@@ -9,6 +9,9 @@ import os
 import plotly.express as px
 import sys
 from pathlib import Path
+from textblob import TextBlob
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
 # 현로젝트 루트 디렉토리를 Python 경로에 추가
 current_dir = Path(__file__).parent
@@ -31,7 +34,7 @@ USE_GPT = False  # 테스트 중에는 False로 설정
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
     if not USE_GPT:
-        return "GPT 호출이 비활성화되었습니다."
+        return "GPT 호출 비활성화되었습니다."
 
     try:
         response = client.chat.completions.create(
@@ -276,7 +279,6 @@ def create_enhanced_network():
 def create_temporal_sentiment_viz(transcript_data):
     """어닝콜 감성 분석 시각화"""
     
-    # 데이터 추출
     temporal_df = extract_temporal_data(transcript_data)
     
     if temporal_df.empty:
@@ -296,7 +298,7 @@ def create_temporal_sentiment_viz(transcript_data):
         hovertemplate="Time: %{x}<br>Sentiment: %{y:.2f}<br><extra></extra>"
     ))
 
-    # 레이아웃 설정
+    # 클릭 이벤트를 위한 설정
     fig.update_layout(
         title="Earnings Call Sentiment Trend",
         xaxis_title="Time",
@@ -308,13 +310,126 @@ def create_temporal_sentiment_viz(transcript_data):
         margin=dict(t=30, l=60, r=30, b=60)
     )
 
-    # y축 범위 설정 (-1 ~ 1)
     fig.update_yaxes(range=[-1, 1])
 
-    # Jeremy Barnum의 발언 추출
-    barnum_statements = temporal_df[temporal_df['speaker'].str.contains('Barnum', case=False, na=False)]
+    return fig, temporal_df
 
-    return fig, barnum_statements
+def show_transcript_popup(temporal_df, selected_index):
+    """선택된 시점의 트랜스크립트를 팝업으로 표시"""
+    
+    # CSS로 팝업 스타일 정의
+    st.markdown("""
+        <style>
+        .transcript-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            color: white;
+            font-size: 24px;
+        }
+        .highlighted-text {
+            background-color: rgba(138, 180, 248, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 팝업 내용
+    st.markdown(f"""
+        <div class="transcript-popup">
+            <div class="popup-close" onclick="window.streamlit.setComponentValue('close_popup', true)">×</div>
+            <h3>Transcript at {temporal_df.index[selected_index]}</h3>
+            <div class="highlighted-text">
+                <div style="color: #8ab4f8; margin-bottom: 5px;">
+                    Sentiment Score: {temporal_df.iloc[selected_index]['sentiment_score']:.3f}
+                </div>
+                <div>{temporal_df.iloc[selected_index]['text']}</div>
+            </div>
+            <div style="margin-top: 20px;">
+                <h4>Context:</h4>
+                {temporal_df.iloc[max(0, selected_index-2):selected_index]['text'].str.cat(sep='<br><br>')}
+                <br><br>
+                {temporal_df.iloc[selected_index+1:selected_index+3]['text'].str.cat(sep='<br><br>')}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+def get_finbert_sentiment(text):
+    tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+    model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
+    
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    outputs = model(**inputs)
+    
+    predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    positive = predictions[0][0].item()
+    negative = predictions[0][1].item()
+    neutral = predictions[0][2].item()
+    
+    # 점수를 -1에서 1 사이로 정규화
+    sentiment_score = (positive - negative) / (positive + negative + neutral)
+    
+    return sentiment_score
+
+def is_key_financial_insight(text):
+    """핵심 금융 정보인지 판단"""
+    # 금융 관련 키워드
+    financial_keywords = {
+        # 실적/성과 관련
+        'revenue', 'income', 'earnings', 'profit', 'margin', 'growth',
+        'billion', 'million', 'percent', 'basis points',
+        
+        # 사업 영역
+        'banking', 'trading', 'loans', 'deposits', 'credit', 'investment',
+        'assets', 'capital', 'markets',
+        
+        # 지표
+        'ROE', 'ROTCE', 'CET1', 'NII', 'EPS'
+    }
+    
+    # 불필요한 시작 문구
+    skip_phrases = {
+        'thank you', 'good morning', 'hello', 'hi everyone',
+        'next question', 'operator', 'please go ahead'
+    }
+    
+    text_lower = text.lower()
+    
+    # 불필요한 문구로 시작하면 제외
+    if any(text_lower.startswith(phrase) for phrase in skip_phrases):
+        return False
+        
+    # 금융 키워드를 포함하고 있는지 확인
+    return any(keyword in text_lower for keyword in financial_keywords)
+
+def get_financial_context(temporal_df, selected_index):
+    """선택된 시점�� 금융 관련 문맥 추출"""
+    current_text = temporal_df.iloc[selected_index]['text']
+    
+    if not is_key_financial_insight(current_text):
+        # 현재 텍스트가 금융 정보가 아니면 주변 문맥에서 찾기
+        context_range = range(max(0, selected_index-5), min(len(temporal_df), selected_index+5))
+        for idx in context_range:
+            if is_key_financial_insight(temporal_df.iloc[idx]['text']):
+                return temporal_df.iloc[idx]['text'], temporal_df.iloc[idx]['sentiment_score']
+    
+    return current_text, temporal_df.iloc[selected_index]['sentiment_score']
 
 def main():
     # 페이지 설정
@@ -350,7 +465,7 @@ def main():
     # # 현재 작업 디렉토리 확인
     # st.write(f"Current working directory: {os.getcwd()}")
 
-    # # Q4 2023 파일 절대 경로
+    # # Q4 2023 일 절대 경로
     # q4_path = os.path.abspath('data/raw/JPM_2023_Q4.txt')
     # st.write(f"Q4 2023 absolute path: {q4_path}")
 
@@ -563,7 +678,7 @@ def main():
             - What's the outlook for next quarter?
             """)
     
-    # 주요 지표 행
+    # 요 지표 행
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -698,7 +813,7 @@ def main():
                     max_tokens=500
                 )
                 
-                # GPT 응답을 딕셔너리로 변환
+                # GPT 응답을 딕셔너리로 변���
                 keywords = {}
                 for line in response.choices[0].message.content.strip().split('\n'):
                     if ':' in line:
@@ -734,7 +849,7 @@ def main():
                 if quarter_text:
                     all_texts.append(quarter_text)
                     
-                    # 해당 분기 탭에서 워드클라우드 ���시
+                    # 해당 분기 탭에서 워드클라우드 시
                     with tabs[list(quarterly_files.keys()).index(quarter)]:
                         st.caption(f"AI Analysis of {quarter} Earnings Call")
                         keywords = get_ai_keywords(quarter_text, "quarterly")
@@ -827,7 +942,7 @@ def main():
     st.subheader("📈 Time Series Analysis of Financial Metrics")
 
     # 시계열 데이터 로드
-    time_series_data = pd.read_csv('data/time_series_data.csv')  # 시계열 데이터 파일 경로
+    time_series_data = pd.read_csv('data/time_series_data.csv')  # 시계열 데이터 파일 로드
 
     # 시계열 데이터 시각화
     time_series_fig = go.Figure()
@@ -864,45 +979,15 @@ def main():
     st.subheader("👥 Speaker Sentiment Analysis")
 
     # 발언자 목록과 데이터 가져오기
-    speakers, temporal_data = create_temporal_sentiment_viz(text_data)
+    sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
 
-    if speakers:
-        # 발언자 선택
-        selected_speaker = st.selectbox(
-            "Select a speaker to view their statements and sentiment scores:",
-            speakers
-        )
-
-        # 선택된 발언자의 발언 표시
-        if selected_speaker:
-            speaker_data = temporal_data[temporal_data['speaker'] == selected_speaker]
-            
-            # 발언별 감성 점수와 텍스트 표시 (4단어 초과인 발언만)
-            for _, row in speaker_data.iterrows():
-                text = row['text'].strip()
-                # 4단어 초과인 발언만 표시
-                if len(text.split()) > 4:
-                    with st.expander(f"Sentiment Score: {row['sentiment_score']:.3f}"):
-                        st.write(text)
-                    st.markdown("---")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # 감성 분석 섹션
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-    st.subheader("🎭 Earnings Call Sentiment Analysis")
-
-    # 감성 분석 시각화 생성
-    sentiment_fig, barnum_data = create_temporal_sentiment_viz(text_data)
-
-    # 감성 추이 그래프 표시
-    st.plotly_chart(sentiment_fig, use_container_width=True)
-
-    # Jeremy Barnum의 발언 표시
-    st.subheader("CFO Jeremy Barnum's Statements")
+    # Jeremy Barnum의 발언만 필터링
+    barnum_statements = temporal_data[temporal_data['speaker'].str.contains('Barnum', case=False, na=False)]
     
-    if not barnum_data.empty:
-        for _, row in barnum_data.iterrows():
+    if not barnum_statements.empty:
+        st.subheader("CFO Jeremy Barnum's Statements")
+        
+        for _, row in barnum_statements.iterrows():
             text = row['text'].strip()
             # 4단어 초과인 발언만 표시
             if len(text.split()) > 4:
@@ -917,6 +1002,88 @@ def main():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # 감성 분석 섹션
+    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+    st.subheader("🎭 Earnings Call Sentiment Analysis")
+
+    # 감성 분석 시각화 생성
+    sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
+
+    # 그래프 표시
+    st.plotly_chart(sentiment_fig, use_container_width=True)
+
+    # 선택기 추가
+    if not temporal_data.empty:
+        selected_index = st.select_slider(
+            "Select a point in time",
+            options=range(len(temporal_data)),
+            format_func=lambda x: f"Time {x}"
+        )
+
+        # 금융 인사이트 추출 및 표시
+        insight_text, sentiment = get_financial_context(temporal_data, selected_index)
+        if is_key_financial_insight(insight_text):
+            st.markdown(f"""
+                <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
+                    <div style='color: #8ab4f8; margin-bottom: 5px;'>Financial Insight (Sentiment: {sentiment:.3f})</div>
+                    <div>{insight_text}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
 if __name__ == "__main__":
     main()
+
+EARNINGS_CALL_INSIGHTS = {
+    'financial_highlights': {
+        'title': 'Financial Performance Highlights',
+        'content': [
+            {
+                'topic': 'Revenue',
+                'text': "Our revenue for the quarter was $40.7 billion, up 21% year-on-year...",
+                'sentiment_score': 0.6,
+                'timestamp': '10:05'
+            },
+            {
+                'topic': 'Net Income',
+                'text': "Net income of $13.2 billion reflected strong underlying performance...",
+                'sentiment_score': 0.8,
+                'timestamp': '10:08'
+            }
+        ]
+    },
+    'strategic_updates': {
+        'title': 'Strategic Initiatives & Business Updates',
+        'content': [
+            {
+                'topic': 'Digital Banking',
+                'text': "Our digital platform saw significant growth with active users up 15%...",
+                'sentiment_score': 0.7,
+                'timestamp': '10:15'
+            }
+        ]
+    },
+    'future_outlook': {
+        'title': 'Future Outlook & Guidance',
+        'content': [
+            {
+                'topic': '2024 Outlook',
+                'text': "We expect continued momentum in our core businesses...",
+                'sentiment_score': 0.5,
+                'timestamp': '10:45'
+            }
+        ]
+    },
+    'qa_highlights': {
+        'title': 'Key Q&A Insights',
+        'content': [
+            {
+                'topic': 'Credit Quality',
+                'question': "Can you provide more color on credit quality trends?",
+                'answer': "Credit quality remains strong across our portfolios...",
+                'sentiment_score': 0.4,
+                'timestamp': '11:15'
+            }
+        ]
+    }
+}
 
