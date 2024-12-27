@@ -102,95 +102,27 @@ def create_keyword_network(text):
     
     return network_data
 
-def main():
+def create_time_series_data():
     # 데이터 폴더 생성
     if not os.path.exists('data'):
         os.makedirs('data')
     
-    # 원본 텍스트 파일 읽기
-    with open('data/JPMorganChase_Q3_2024.txt', 'r', encoding='utf-8') as file:
-        text = file.read()
-    
-    # 텍스트 전처리 (기존 코드)
-    processed_text = preprocess_text(text)
-    
-    # 기존의 토픽 모델링 (유지)
-    sentences = sent_tokenize(processed_text)
-    topic_model = BERTopic(language="english", 
-                          min_topic_size=5, 
-                          nr_topics=8,
-                          verbose=True)
-    
-    topics, _ = topic_model.fit_transform(sentences)
-    
-    # 토픽 정보 추출 및 저장
-    topic_info = topic_model.get_topic_info()
-    topic_info = topic_info.rename(columns={
-        'Count': 'Size',
-        'Topic': 'Topic_Num'
-    })
-    
-    # 각 토픽의 상위 문구 추출
-    topic_phrases = []
-    for topic in topic_info['Topic_Num']:
-        if topic != -1:  # -1은 아웃라이어 토픽
-            phrases = [phrase for phrase, _ in topic_model.get_topic(topic)][:3]
-            topic_phrases.append(' | '.join(phrases))
-        else:
-            topic_phrases.append('')
-    
-    # 토픽 정보에 문구 추가
-    topic_info['Top_Phrases'] = topic_phrases
-    
-    # 새로운 분석 추가
-    sentiment_data = analyze_sentiment_and_keywords(processed_text)
-    network_data = create_keyword_network(processed_text)
-    
-    # 결과 저장
-    topic_info.to_csv('data/topic_info.csv', index=False)
-    
-    # 감성 분석 결과 저장
-    sentiment_df = pd.DataFrame({
-        'text': sentiment_data['sentence_texts'],
-        'sentiment': sentiment_data['sentence_sentiments']
-    })
-    sentiment_df.to_csv('data/sentiment_analysis.csv', index=False)
-    
-    # 키워드 데이터 저장 방식 수정
-    keyword_data = {
-        'keyword': [],
-        'sentiment': [],
-        'count': []
+    # 예시 데이터 생성 (4분기 동안의 데이터)
+    data = {
+        'date': ['2023-10-01', '2023-10-02', '2023-10-03', '2023-10-04'],  # 실제 날짜로 변경
+        'revenue': [100, 150, 200, 250],  # 실제 수치로 변경
+        'profit': [30, 50, 70, 90],  # 실제 수치로 변경
+        'expenses': [70, 100, 130, 160]  # 실제 수치로 변경
     }
     
-    # 긍정 키워드
-    for word, count in sentiment_data['positive_keywords'].items():
-        keyword_data['keyword'].append(word)
-        keyword_data['sentiment'].append('positive')
-        keyword_data['count'].append(count)
+    time_series_df = pd.DataFrame(data)
     
-    # 부정 키워드
-    for word, count in sentiment_data['negative_keywords'].items():
-        keyword_data['keyword'].append(word)
-        keyword_data['sentiment'].append('negative')
-        keyword_data['count'].append(count)
-    
-    # 중립 키워드
-    for word, count in sentiment_data['neutral_keywords'].items():
-        keyword_data['keyword'].append(word)
-        keyword_data['sentiment'].append('neutral')
-        keyword_data['count'].append(count)
-    
-    # DataFrame으로 변환하여 저장
-    keyword_df = pd.DataFrame(keyword_data)
-    keyword_df.to_csv('data/keyword_analysis.csv', index=False)
-    
-    # 네트워크 데이터 저장
-    network_df = pd.DataFrame(network_data['edges'], 
-                            columns=['source', 'target', 'weight'])
-    network_df.to_csv('data/network_data.csv', index=False)
-    
-    print("전처리 및 분석 완료!")
+    # CSV 파일로 저장
+    time_series_df.to_csv('data/time_series_data.csv', index=False)
+    print("Time series data has been created and saved.")
+
+def main():
+    create_time_series_data()  # 시계열 데이터 생성 및 저장
 
 if __name__ == "__main__":
     main() 

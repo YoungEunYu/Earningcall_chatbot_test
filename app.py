@@ -11,13 +11,19 @@ import plotly.express as px
 # OpenAI 클라이언트 설정
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
+# GPT 호출 활성화/비활성화 플래그
+USE_GPT = False  # 테스트 중에는 False로 설정
+
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
+    if not USE_GPT:
+        return "GPT 호출이 비활성화되었습니다."
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a financial analyst assistant. Use the provided context to answer questions about the earnings call."},
+                {"role": "system", "content": "You are a financial analyst assistant."},
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
             ],
             temperature=0.7,
@@ -601,6 +607,12 @@ def main():
         
         def get_ai_keywords(text, period_type="quarterly"):
             """GPT를 사용하여 핵심 키워드와 가중치 추출"""
+            if not USE_GPT:
+                # GPT 비활성화 시 기본 키워드 추출 로직 추가
+                # 예시: 간단한 키워드 추출 로직
+                keywords = {"example_keyword": 5}  # 기본 키워드 예시
+                return keywords
+
             try:
                 prompt = f"""Analyze this earnings call transcript and create a word cloud representation.
 
@@ -622,7 +634,7 @@ def main():
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "You are a financial analyst creating concise keyword representations of earnings calls."},
+                        {"role": "system", "content": "You are a financial analyst."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.3,
@@ -751,6 +763,43 @@ def main():
     st.subheader("🔄 Enhanced Keyword Network")
     network_fig = create_enhanced_network()
     st.plotly_chart(network_fig, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 시계열 분석 추가
+    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+    st.subheader("📈 Time Series Analysis of Financial Metrics")
+
+    # 시계열 데이터 로드
+    time_series_data = pd.read_csv('data/time_series_data.csv')  # 시계열 데이터 파일 경로
+
+    # 시계열 데이터 시각화
+    time_series_fig = go.Figure()
+
+    # 각 금융 지표에 대해 시계열 그래프 추가
+    for metric in ['revenue', 'profit', 'expenses']:  # 예시로 수익, 이익, 비용 지표 사용
+        time_series_fig.add_trace(go.Scatter(
+            x=time_series_data['date'],
+            y=time_series_data[metric],
+            mode='lines+markers',
+            name=metric.capitalize(),
+            hovertemplate="<b>%{x}</b><br>" +
+                          f"{metric.capitalize()}: %{{y:.2f}}<br>" +
+                          "<extra></extra>"
+        ))
+
+    # 레이아웃 설정
+    time_series_fig.update_layout(
+        title="Time Series Analysis of Financial Metrics",
+        xaxis_title="Date",
+        yaxis_title="Value",
+        plot_bgcolor='#2d2d2d',
+        paper_bgcolor='#2d2d2d',
+        font=dict(color='white'),
+        height=400
+    )
+
+    # 시각화 출력
+    st.plotly_chart(time_series_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
