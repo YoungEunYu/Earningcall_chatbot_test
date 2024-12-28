@@ -1,128 +1,155 @@
-import pandas as pd
-import numpy as np
-from bertopic import BERTopic
-import nltk
-from nltk.tokenize import sent_tokenize
-from nltk.sentiment import SentimentIntensityAnalyzer
-from collections import Counter
-import networkx as nx
+import spacy
 import re
+import json
+from textblob import TextBlob
 import os
-import ssl
+from pathlib import Path
 
-# SSL 인증서 설정 (기존 코드)
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
-
-# NLTK 데이터 다운로드
-nltk.download('punkt')
-nltk.download('vader_lexicon')
-
-def preprocess_text(text):
-    """텍스트 전처리 함수"""
-    # 특수문자 제거 및 정리
-    text = re.sub(r'\[.*?\]', '', text)
-    text = re.sub(r'\(.*?\)', '', text)
-    text = re.sub(r'\s+', ' ', text)
-    text = text.strip()
-    return text
-
-def analyze_sentiment_and_keywords(text):
-    """감성 분석 및 주요 키워드 추출"""
-    sia = SentimentIntensityAnalyzer()
-    sentences = sent_tokenize(text)
-    
-    sentiment_data = {
-        'positive_keywords': Counter(),
-        'negative_keywords': Counter(),
-        'neutral_keywords': Counter(),
-        'sentence_sentiments': [],
-        'sentence_texts': []
+def extract_complex_insights(text):
+    """복합 키워드와 인사이트 추출"""
+    insights = {
+        "nodes": [],
+        "edges": []
     }
     
-    # 금융 관련 키워드 필터
-    financial_terms = {'revenue', 'profit', 'growth', 'margin', 'earnings', 
-                      'investment', 'market', 'strategy', 'risk', 'capital',
-                      'assets', 'dividend', 'cost', 'performance', 'outlook'}
+    print(f"Processing text of length: {len(text)}")
     
+    patterns = {
+        'revenue': r'\$?\d+(?:\.\d+)?\s*(?:billion|million|B|M)?\s*(?:in|of)?\s*(?:revenue|income|earnings)',
+        'growth': r'(?:up|down|increased|decreased|grew|declined)(?:\s+by)?\s+\d+(?:\.\d+)?%',
+        'segment': r'(?:CIB|CCB|AWM|CB)(?:\s+[^.]*?)\$?\d+(?:\.\d+)?\s*(?:billion|million|B|M)',
+        'credit': r'credit\s+(?:quality|metrics|performance|losses?)(?:[^.]*?)(?:strong|stable|improved|deteriorated)',
+        'cost': r'(?:cost|expense)s?\s+(?:[^.]*?)\$?\d+(?:\.\d+)?\s*(?:billion|million|B|M)',
+        'investment': r'invest(?:ing|ment|ed)?\s+(?:[^.]*?)\$?\d+(?:\.\d+)?\s*(?:billion|million|B|M)',
+        'market': r'market\s+(?:share|position|leadership)(?:[^.]*?)(?:increased|decreased|improved|leading|strong)',
+        'guidance': r'(?:expect|forecast|guidance|outlook)(?:[^.]*?)\d+(?:\.\d+)?%'
+    }
+
+    # 인사이트 빈도 추적을 위한 딕셔너리
+    insight_frequencies = {}
+    
+    # 디버깅을 위해 원본 텍스트 일부 출력
+    print("\nSample text:")
+    print(text[:500])
+    
+    sentences = [s.strip() for s in text.split('.') if s.strip()]
+    print(f"\nFound {len(sentences)} sentences")
+    
+    node_id = 0
     for sentence in sentences:
-        # 감성 점수 계산
-        scores = sia.polarity_scores(sentence)
-        compound_score = scores['compound']
+        found_insights = []
         
-        # 문장과 감성 점수 저장
-        sentiment_data['sentence_sentiments'].append(compound_score)
-        sentiment_data['sentence_texts'].append(sentence)
+        for category, pattern in patterns.items():
+            matches = list(re.finditer(pattern, sentence, re.IGNORECASE))
+            if matches:
+                print(f"\nFound {category} in sentence: {sentence[:100]}...")
+                for match in matches:
+                    insight_text = match.group(0)
+                    
+                    # 더도 계산
+                    if insight_text not in insight_frequencies:
+                        # 전체 텍스트에서 해당 인사이트가 등장하는 횟수 계산
+                        insight_frequencies[insight_text] = len(re.findall(re.escape(insight_text), text, re.IGNORECASE))
+                    
+                    # 더 넓은 컨텍스트 캡처
+                    context_start = max(0, match.start() - 100)
+                    context_end = min(len(sentence), match.end() + 100)
+                    context = sentence[context_start:context_end].strip()
+                    
+                    print(f"Extracted: {insight_text} (frequency: {insight_frequencies[insight_text]})")
+                    
+                    node = {
+                        "id": f"node_{node_id}",
+                        "text": insight_text,
+                        "category": category,
+                        "context": context,
+                        "sentiment": TextBlob(context).sentiment.polarity,
+                        "frequency": insight_frequencies[insight_text]  # 빈도 추가
+                    }
+                    insights["nodes"].append(node)
+                    found_insights.append(node)
+                    node_id += 1
         
-        # 키워드 추출 및 분류
-        words = set(word.lower() for word in re.findall(r'\b\w+\b', sentence))
-        relevant_words = words.intersection(financial_terms)
-        
-        if compound_score > 0.2:
-            sentiment_data['positive_keywords'].update(relevant_words)
-        elif compound_score < -0.2:
-            sentiment_data['negative_keywords'].update(relevant_words)
-        else:
-            sentiment_data['neutral_keywords'].update(relevant_words)
+        # 관계 설정
+        for i, node1 in enumerate(found_insights):
+            for node2 in found_insights[i+1:]:
+                # 두 노드가 같은 문장에 있을 때의 관계 강도 계산
+                weight = 1.0
+                
+                # 카테고리가 관련있는 경우 가중치 증가
+                related_categories = {
+                    ('revenue', 'growth'): 1.5,
+                    ('segment', 'revenue'): 1.3,
+                    ('credit', 'segment'): 1.2,
+                    ('cost', 'revenue'): 1.4,
+                    ('investment', 'growth'): 1.5,
+                    ('market', 'segment'): 1.3,
+                    ('guidance', 'growth'): 1.4
+                }
+                
+                cat_pair = (node1['category'], node2['category'])
+                rev_pair = (node2['category'], node1['category'])
+                
+                if cat_pair in related_categories:
+                    weight = related_categories[cat_pair]
+                elif rev_pair in related_categories:
+                    weight = related_categories[rev_pair]
+                
+                # 감성이 비슷한 경우 가중치 증가
+                sentiment_diff = abs(node1['sentiment'] - node2['sentiment'])
+                if sentiment_diff < 0.3:
+                    weight *= 1.2
+                
+                insights["edges"].append({
+                    "source": node1["id"],
+                    "target": node2["id"],
+                    "context": sentence,
+                    "weight": weight  # 가중치 추가
+                })
     
-    return sentiment_data
+    print(f"\nFound {len(insights['nodes'])} insights and {len(insights['edges'])} relationships")
+    return insights
 
-def create_keyword_network(text):
-    """향상된 키워드 네트워크 생성"""
-    sentences = sent_tokenize(text)
-    keyword_pairs = []
+def setup_directories():
+    """필요한 디렉토리 구조 생성"""
+    # 프로젝트 루트 디렉토리
+    root_dir = Path(__file__).parent.parent
     
-    # 금융 관련 키워드 필터
-    financial_terms = {'revenue', 'profit', 'growth', 'margin', 'earnings', 
-                      'investment', 'market', 'strategy', 'risk', 'capital',
-                      'assets', 'dividend', 'cost', 'performance', 'outlook'}
+    # 필요한 ��렉토리들
+    directories = [
+        'data',
+        'data/raw',
+        'data/processed'
+    ]
     
-    for sentence in sentences:
-        words = [word.lower() for word in re.findall(r'\b\w+\b', sentence)]
-        relevant_words = [w for w in words if w in financial_terms]
-        
-        # 한 문장 내의 키워드 페어 생성
-        for i in range(len(relevant_words)):
-            for j in range(i+1, len(relevant_words)):
-                keyword_pairs.append((relevant_words[i], relevant_words[j]))
-    
-    # 키워드 간 연관성 계산
-    edge_weights = Counter(keyword_pairs)
-    
-    # 네트워크 데이터 생성
-    network_data = {
-        'nodes': list(financial_terms),
-        'edges': [(pair[0], pair[1], weight) 
-                 for pair, weight in edge_weights.items()]
-    }
-    
-    return network_data
-
-def create_time_series_data():
-    # 데이터 폴더 생성
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
-    # 예시 데이터 생성 (4분기 동안의 데이터)
-    data = {
-        'date': ['2023-10-01', '2023-10-02', '2023-10-03', '2023-10-04'],  # 실제 날짜로 변경
-        'revenue': [100, 150, 200, 250],  # 실제 수치로 변경
-        'profit': [30, 50, 70, 90],  # 실제 수치로 변경
-        'expenses': [70, 100, 130, 160]  # 실제 수치로 변경
-    }
-    
-    time_series_df = pd.DataFrame(data)
-    
-    # CSV 파일로 저장
-    time_series_df.to_csv('data/time_series_data.csv', index=False)
-    print("Time series data has been created and saved.")
+    # 디렉토리 생성
+    for dir_path in directories:
+        full_path = root_dir / dir_path
+        full_path.mkdir(parents=True, exist_ok=True)
+        print(f"Created directory: {full_path}")
 
 def main():
-    create_time_series_data()  # 시계열 데이터 생성 및 저장
+    # 디렉토리 설정
+    setup_directories()
+    
+    # 어닝콜 텍스트 로드
+    try:
+        with open('data/raw/JPM_2024_Q3.txt', 'r', encoding='utf-8') as f:
+            text = f.read()
+        
+        # 인사이트 추출
+        insights = extract_complex_insights(text)
+        
+        # JSON 파일로 저장
+        output_path = Path('data/processed/insights_network.json')
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(insights, f, indent=2, ensure_ascii=False)
+        print(f"Successfully created: {output_path}")
+        
+    except FileNotFoundError:
+        print("Error: Input file not found. Please ensure JPM_2024_Q3.txt exists in data/raw/")
+    except Exception as e:
+        print(f"Error during processing: {str(e)}")
 
 if __name__ == "__main__":
     main() 

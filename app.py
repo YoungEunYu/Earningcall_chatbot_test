@@ -12,6 +12,7 @@ from pathlib import Path
 from textblob import TextBlob
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import json
 
 # 현로젝트 루트 디렉토리를 Python 경로에 추가
 current_dir = Path(__file__).parent
@@ -70,7 +71,7 @@ def create_topic_network(topic_info):
                 G.add_node(phrase, node_type='phrase', size=10)
                 G.add_edge(topic_num, phrase)
     
-    # 노드 위치 계산
+    # 노드 위치 산
     pos = nx.spring_layout(G, k=1, iterations=50)
     
     # 엣지 트레이스
@@ -198,83 +199,133 @@ def create_sentiment_viz():
     return pie_fig, keywords_fig
 
 def create_enhanced_network():
-    """향상된 키워드 네트워크 시각화"""
-    network_df = pd.read_csv('data/network_data.csv')
+    """향상된 인사이트 네트워크 시각화"""
     
-    # 네트워크 생성
-    G = nx.from_pandas_edgelist(network_df, 'source', 'target', 'weight')
+    # JSON 파일에서 데이터 로드
+    with open('data/processed/insights_network.json', 'r') as f:
+        network_data = json.load(f)
     
-    # 노드 가중치 계산 수정
-    node_weights = {}
-    for node in G.nodes():
-        # 연결된 엣지들의 가중치 합계 계산
-        weight_sum = sum(G[node][neighbor]['weight'] for neighbor in G[node])
-        node_weights[node] = weight_sum
-    
-    # 노드 위치 계산
-    pos = nx.spring_layout(G, k=1, iterations=50)
-    
-    # 엣지 트레이스
-    edge_x = []
-    edge_y = []
-    edge_weights = []
-    
-    for edge in G.edges(data=True):
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-        edge_weights.extend([edge[2]['weight']] * 3)
+    # 노드 색상 매핑
+    color_map = {
+        'revenue': '#1f77b4',      # 수익
+        'growth': '#2ca02c',       # 성장
+        'segment': '#ff7f0e',      # 사업부문
+        'credit': '#d62728',       # 신용
+        'cost': '#9467bd',         # 비용
+        'investment': '#8c564b',   # 투자
+        'market': '#e377c2',       # 시장
+        'guidance': '#7f7f7f'      # 가이던스
+    }
     
     # 노드 트레이스
-    node_x = []
-    node_y = []
-    node_text = []
-    node_size = []
-    
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        node_text.append(f"{node}<br>Weight: {node_weights[node]}")
-        node_size.append(node_weights[node] * 10)
-    
-    # 시각화 생성
-    network_fig = go.Figure()
-    
-    # 엣지 추가
-    network_fig.add_trace(go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=1, color='#666'),
-        hoverinfo='none',
-        mode='lines'
-    ))
-    
-    # 노드 추가
-    network_fig.add_trace(go.Scatter(
-        x=node_x, y=node_y,
+    node_trace = go.Scatter(
+        x=[], y=[], 
         mode='markers+text',
         hoverinfo='text',
-        text=node_text,
+        text=[],
         textposition="bottom center",
         marker=dict(
-            size=node_size,
-            color='#0066ff',
-            line_width=2,
-            line=dict(color='#444')
+            showscale=True,
+            colorscale='YlOrRd',
+            reversescale=True,
+            color=[],
+            size=[],
+            line_width=2
         )
-    ))
-    
-    network_fig.update_layout(
-        title="Keyword Relationship Network",
-        showlegend=False,
-        plot_bgcolor='#2d2d2d',
-        paper_bgcolor='#2d2d2d',
-        font=dict(color='white'),
-        height=600
     )
     
-    return network_fig
+    # 엣지 트레이스
+    edge_trace = go.Scatter(
+        x=[], y=[],
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='text',
+        mode='lines',
+        text=[]
+    )
+    
+    # 네트워크 레이아웃 계산
+    G = nx.Graph()
+    
+    # 노드 추가
+    for node in network_data['nodes']:
+        G.add_node(node['id'], 
+                  text=node['text'],
+                  category=node['category'],
+                  sentiment=node['sentiment'],
+                  frequency=node['frequency'])
+    
+    # 엣지 추가 - weight 처리 수정
+    for edge in network_data['edges']:
+        try:
+            weight = edge.get('weight', 1.0)  # weight가 없으면 기본값 1.0 사용
+        except:
+            weight = 1.0
+        G.add_edge(edge['source'], edge['target'], 
+                  weight=weight,
+                  context=edge['context'])
+    
+    # 레이아웃 계산
+    pos = nx.spring_layout(G)
+    
+    # 엣지 데이터 추가
+    edge_trace = go.Scatter(
+        x=[], y=[],
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='text',
+        mode='lines',
+        text=[]
+    )
+    
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_trace['x'] += (x0, x1, None)
+        edge_trace['y'] += (y0, y1, None)
+        try:
+            weight = G.edges[edge]['weight']
+            context = G.edges[edge]['context']
+            edge_trace['text'] += (f"Weight: {weight:.2f}<br>{context}",)
+        except:
+            edge_trace['text'] += (G.edges[edge].get('context', ''),)
+    
+    # 노드 데이터 추가
+    for node in G.nodes():
+        x, y = pos[node]
+        node_trace['x'] += (x,)
+        node_trace['y'] += (y,)
+        node_info = G.nodes[node]
+        
+        # 호버 텍스트
+        hover_text = f"""
+        {node_info['text']}
+        Category: {node_info['category']}
+        Sentiment: {node_info['sentiment']}
+        Frequency: {node_info['frequency']}
+        """
+        node_trace['text'] += (hover_text,)
+        
+        # 노드 크기 (빈도 기반)
+        node_trace['marker']['size'] += (20 + node_info['frequency'] * 5,)
+        
+        # 노드 색상 (���테고리 기반)
+        node_trace['marker']['color'] += (color_map[node_info['category']],)
+    
+    # 시각화
+    fig = go.Figure(data=[edge_trace, node_trace],
+                   layout=go.Layout(
+                       title='Financial Insights Network',
+                       titlefont_size=16,
+                       showlegend=False,
+                       hovermode='closest',
+                       margin=dict(b=20,l=5,r=5,t=40),
+                       plot_bgcolor='#2d2d2d',
+                       paper_bgcolor='#2d2d2d',
+                       font=dict(color='white'),
+                       xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                       yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                   ))
+    
+    return fig
 
 def create_temporal_sentiment_viz(transcript_data):
     """어닝콜 감성 분석 시각화"""
@@ -419,7 +470,7 @@ def is_key_financial_insight(text):
     return any(keyword in text_lower for keyword in financial_keywords)
 
 def get_financial_context(temporal_df, selected_index):
-    """선택된 시점�� 금융 관련 문맥 추출"""
+    """선택된 시점의 금융 관련 문맥 추출"""
     current_text = temporal_df.iloc[selected_index]['text']
     
     if not is_key_financial_insight(current_text):
@@ -813,7 +864,7 @@ def main():
                     max_tokens=500
                 )
                 
-                # GPT 응답을 딕셔너리로 변���
+                # GPT 응답을 딕셔너리로 변환
                 keywords = {}
                 for line in response.choices[0].message.content.strip().split('\n'):
                     if ':' in line:

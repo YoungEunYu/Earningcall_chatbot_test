@@ -1,0 +1,334 @@
+{
+  "nodes": [
+    {
+      "id": "node_0",
+      "text": "2024 Earnings",
+      "category": "revenue",
+      "context": "Welcome to JPMorgan Chase's Third Quarter 2024 Earnings Call",
+      "sentiment": 0.4,
+      "frequency": 1
+    },
+    {
+      "id": "node_1",
+      "text": "up 10%",
+      "category": "growth",
+      "context": "8 billion or 17%, but excluding the prior year's net investment securities losses, it was up 10% on higher asset management and investment banking fees",
+      "sentiment": 0.08333333333333333,
+      "frequency": 2
+    },
+    {
+      "id": "node_2",
+      "text": "CCB reported net income of $4 billion",
+      "category": "segment",
+      "context": "CCB reported net income of $4 billion on revenue of $17",
+      "sentiment": 0.0,
+      "frequency": 1
+    },
+    {
+      "id": "node_3",
+      "text": "down 3%",
+      "category": "growth",
+      "context": "8 billion, which was down 3% year-on- year",
+      "sentiment": -0.15555555555555559,
+      "frequency": 1
+    },
+    {
+      "id": "node_4",
+      "text": "down 11%",
+      "category": "growth",
+      "context": "In Banking & Wealth Management, revenue was down 11% year-on-year, reflecting deposit margin compression and lower deposits, partially offset by growth",
+      "sentiment": -0.1277777777777778,
+      "frequency": 1
+    },
+    {
+      "id": "node_5",
+      "text": "down 8%",
+      "category": "growth",
+      "context": "Average deposits were down 8% year-on-year and 2% sequentially",
+      "sentiment": -0.1527777777777778,
+      "frequency": 1
+    },
+    {
+      "id": "node_6",
+      "text": "up 21%",
+      "category": "growth",
+      "context": "Client investment assets were up 21% year-on-year, driven by market performance, and we continue to see strong referrals of new wealth m",
+      "sentiment": 0.2848484848484848,
+      "frequency": 1
+    },
+    {
+      "id": "node_7",
+      "text": "up 3%",
+      "category": "growth",
+      "context": "In Home Lending, revenue was up 3% year-on-year, driven by higher NII, partially offset by lower servicing and production revenue",
+      "sentiment": 0.075,
+      "frequency": 1
+    },
+    {
+      "id": "node_8",
+      "text": "up 11%",
+      "category": "growth",
+      "context": "Revenue was up 11% year-on-year, driven by higher Card NII and higher revolving balances",
+      "sentiment": 0.25,
+      "frequency": 2
+    },
+    {
+      "id": "node_9",
+      "text": "up 11%",
+      "category": "growth",
+      "context": "Card outstandings were up 11% due to strong account acquisition and the continued normalization overall",
+      "sentiment": 0.10277777777777776,
+      "frequency": 2
+    },
+    {
+      "id": "node_10",
+      "text": "down 2%",
+      "category": "growth",
+      "context": "And in Auto, originations were $10 billion, down 2%, while maintaining strong margins and high quality credit",
+      "sentiment": 0.1459259259259259,
+      "frequency": 2
+    },
+    {
+      "id": "node_11",
+      "text": "up 5%",
+      "category": "growth",
+      "context": "6 billion were up 5% year-on-year, predominantly driven by higher field and technology compensation, as well as growth i",
+      "sentiment": 0.25,
+      "frequency": 1
+    },
+    {
+      "id": "node_12",
+      "text": "up 31%",
+      "category": "growth",
+      "context": "IB fees were up 31% year-on-year and we ranked number one with year-to-date wallet share of 9",
+      "sentiment": 0.0,
+      "frequency": 1
+    },
+    {
+      "id": "node_13",
+      "text": "up 10%",
+      "category": "growth",
+      "context": "In Advisory, fees were up 10%, benefiting from the closing of a few large deals",
+      "sentiment": 0.007142857142857131,
+      "frequency": 2
+    },
+    {
+      "id": "node_14",
+      "text": "up 56%",
+      "category": "growth",
+      "context": "Underwriting fees were up meaningfully with debt up 56% and equity up 26%, primarily driven by favorable market conditions",
+      "sentiment": 0.45,
+      "frequency": 1
+    },
+    {
+      "id": "node_15",
+      "text": "up 26%",
+      "category": "growth",
+      "context": "Underwriting fees were up meaningfully with debt up 56% and equity up 26%, primarily driven by favorable market conditions",
+      "sentiment": 0.45,
+      "frequency": 1
+    },
+    {
+      "id": "node_16",
+      "text": "up 4%",
+      "category": "growth",
+      "context": "4 billion, up 4% year-on-year, driven by fee growth and higher deposit balances, largely offset by margin compressio",
+      "sentiment": 0.23214285714285715,
+      "frequency": 2
+    },
+    {
+      "id": "node_17",
+      "text": "up 8%",
+      "category": "growth",
+      "context": "2 billion, up 8% year-on-year",
+      "sentiment": 0.0,
+      "frequency": 1
+    },
+    {
+      "id": "node_18",
+      "text": "up 27%",
+      "category": "growth",
+      "context": "Equities was up 27%, reflecting strong performance across regions, largely driven by a supportive trading environment i",
+      "sentiment": 0.3825396825396825,
+      "frequency": 1
+    },
+    {
+      "id": "node_19",
+      "text": "up 9%",
+      "category": "growth",
+      "context": "3 billion, up 9% year-on-year, largely driven by fee growth on higher market levels and volumes",
+      "sentiment": 0.23214285714285715,
+      "frequency": 2
+    },
+    {
+      "id": "node_20",
+      "text": "down 1%",
+      "category": "growth",
+      "context": "8 billion were down 1% year-on-year with lower legal expense predominantly offset by higher revenue related compensation a",
+      "sentiment": 0.0736111111111111,
+      "frequency": 2
+    },
+    {
+      "id": "node_21",
+      "text": "down 2%",
+      "category": "growth",
+      "context": "Average Banking & Payments loans were down 2% year-on-year and down 1% sequentially",
+      "sentiment": -0.1537037037037037,
+      "frequency": 2
+    },
+    {
+      "id": "node_22",
+      "text": "down 1%",
+      "category": "growth",
+      "context": "Average Banking & Payments loans were down 2% year-on-year and down 1% sequentially",
+      "sentiment": -0.1537037037037037,
+      "frequency": 2
+    },
+    {
+      "id": "node_23",
+      "text": "up 7%",
+      "category": "growth",
+      "context": "Average client deposits were up 7% year-on-year and 3% sequentially, primarily driven by growth from large corporates and Payments and",
+      "sentiment": 0.15476190476190477,
+      "frequency": 1
+    },
+    {
+      "id": "node_24",
+      "text": "costs were $316 million",
+      "category": "cost",
+      "context": "Finally, credit costs were $316 million, driven by higher net lending activity, including end markets and downgrades, partially offset by i",
+      "sentiment": 0.0375,
+      "frequency": 1
+    },
+    {
+      "id": "node_25",
+      "text": "up 9%",
+      "category": "growth",
+      "context": "4 billion was up 9% year-on-year, driven by growth in management fees on higher average market levels and strong net in",
+      "sentiment": 0.13333333333333333,
+      "frequency": 2
+    },
+    {
+      "id": "node_26",
+      "text": "up 16%",
+      "category": "growth",
+      "context": "6 billion were up 16% year-on-year, predominantly driven by higher compensation, including revenue-related compensation a",
+      "sentiment": 0.25,
+      "frequency": 1
+    },
+    {
+      "id": "node_27",
+      "text": "up 23%",
+      "category": "growth",
+      "context": "7 trillion were both up 23%, driven by higher market levels and continued net inflows",
+      "sentiment": 0.125,
+      "frequency": 1
+    },
+    {
+      "id": "node_28",
+      "text": "up 2%",
+      "category": "growth",
+      "context": "And finally, loans were up 2% quarter-on-quarter and deposits were up 4% quarter-on-quarter",
+      "sentiment": 0.0,
+      "frequency": 1
+    },
+    {
+      "id": "node_29",
+      "text": "up 4%",
+      "category": "growth",
+      "context": "And finally, loans were up 2% quarter-on-quarter and deposits were up 4% quarter-on-quarter",
+      "sentiment": 0.0,
+      "frequency": 2
+    },
+    {
+      "id": "node_30",
+      "text": "Expenses of $589 million",
+      "category": "cost",
+      "context": "Expenses of $589 million were down $107 million year-on-year",
+      "sentiment": -0.15555555555555559,
+      "frequency": 1
+    },
+    {
+      "id": "node_31",
+      "text": "guidance implies a sizable drop in Q4 NII ex-Markets about 6%",
+      "category": "guidance",
+      "context": "So Jeremy, as you highlighted, full year NII guidance implies a sizable drop in Q4 NII ex-Markets about 6%",
+      "sentiment": 0.35,
+      "frequency": 1
+    },
+    {
+      "id": "node_32",
+      "text": "expense base that's just below $90 billion",
+      "category": "cost",
+      "context": "If we adjust for the one-timers this year, that would suggest a core expense base that's just below $90 billion",
+      "sentiment": -0.8,
+      "frequency": 1
+    },
+    {
+      "id": "node_33",
+      "text": "down 6%",
+      "category": "growth",
+      "context": "Number one, NII is expected to be down 6% sequentially in fourth quarter",
+      "sentiment": -0.0851851851851852,
+      "frequency": 1
+    },
+    {
+      "id": "node_34",
+      "text": "expected to be down 6%",
+      "category": "guidance",
+      "context": "Number one, NII is expected to be down 6% sequentially in fourth quarter",
+      "sentiment": -0.0851851851851852,
+      "frequency": 1
+    },
+    {
+      "id": "node_35",
+      "text": "down 4%",
+      "category": "growth",
+      "context": "I think year-over-year in '25, consensus has it down 4% from your new level",
+      "sentiment": -0.009595959595959616,
+      "frequency": 1
+    },
+    {
+      "id": "node_36",
+      "text": "up 6%",
+      "category": "growth",
+      "context": "lly in the debit and credit card spend that you guys break out, you had nice growth year-over-year, up 6%, flat Q-Q",
+      "sentiment": 0.2875,
+      "frequency": 1
+    },
+    {
+      "id": "node_37",
+      "text": "CCB deposits in no small part as a function of the brand strategy and the build out and the fact that only about a quarter of our top 125 m",
+      "category": "segment",
+      "context": "So then when you overlay on to that, what you mentioned, which is our long-term share growth in CCB deposits in no small part as a function of the brand strategy and the build out and the fact that only about a quarter of our top 125 markets in CCB are at that 15% share number",
+      "sentiment": 0.20833333333333334,
+      "frequency": 1
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_14",
+      "target": "node_15",
+      "context": "Underwriting fees were up meaningfully with debt up 56% and equity up 26%, primarily driven by favorable market conditions",
+      "weight": 1.2
+    },
+    {
+      "source": "node_21",
+      "target": "node_22",
+      "context": "Average Banking & Payments loans were down 2% year-on-year and down 1% sequentially",
+      "weight": 1.2
+    },
+    {
+      "source": "node_28",
+      "target": "node_29",
+      "context": "And finally, loans were up 2% quarter-on-quarter and deposits were up 4% quarter-on-quarter",
+      "weight": 1.2
+    },
+    {
+      "source": "node_33",
+      "target": "node_34",
+      "context": "Number one, NII is expected to be down 6% sequentially in fourth quarter",
+      "weight": 1.68
+    }
+  ]
+}
