@@ -235,28 +235,33 @@ def analyze_topic_trends(texts_df):
     return pd.DataFrame(topics_over_time)
 
 def calculate_topic_importance(topic_label, topic_terms, text, coherence):
-    """토픽의 실제 중요도 계산"""
-    # 1. 출현 빈도 (frequency)
-    term_frequency = sum(text.lower().count(term.lower()) for term, _ in topic_terms)
+    """토픽의 실제 중요도 계산 (0-1 사이로 정규화)"""
+    # 1. 출현 빈도 정규화 (50%)
+    term_counts = [text.lower().count(term.lower()) for term, _ in topic_terms]
+    max_frequency = max(term_counts) if term_counts else 1
+    term_frequency = sum(term_counts) / (len(term_counts) * max_frequency)
     
-    # 2. 문서 내 위치 (location)
-    paragraphs = text.split('\n\n')
-    location_scores = []
-    for i, para in enumerate(paragraphs):
-        if any(term[0].lower() in para.lower() for term in topic_terms):
-            # 문서 앞쪽에 나올수록 높은 점수
-            location_scores.append(1 - (i / len(paragraphs)))
-    location_score = max(location_scores) if location_scores else 0
+    # 2. 문서 내 위치 (섹션별 가중치) (20%)
+    section_importance = 0.0
+    if "Financial Highlights" in text or "Financial Results" in text:
+        section_importance = 1.0
+    elif "Q&A" in text:
+        section_importance = 1.0    # Q&A도 동일하게 중요
+    elif "Opening Remarks" in text:
+        section_importance = 0.8
     
-    # 3. 발화자 중요도 (speaker importance)
-    speaker_importance = 1.0 if "Jeremy Barnum" in text or "Jamie Dimon" in text else 0.5
+    # 3. 발화자 중요도 (20% 유지)
+    speaker_importance = 1.0 if "Jamie Dimon" in text else (
+        1.0 if "Jeremy Barnum" in text else (
+        0.8 if "Question" in text else 0.6
+    ))
     
     # 최종 중요도 점수 계산
     importance = (
-        0.4 * term_frequency/100 +  # 빈도
-        0.3 * location_score +      # 위치
-        0.2 * speaker_importance +  # 발화자
-        0.1 * coherence            # 토픽 일관성
+        0.50 * term_frequency +      # 50%로 상향
+        0.20 * section_importance +  # 20%로 하향
+        0.20 * speaker_importance +  # 20% 유지
+        0.10 * coherence            # 10% 유지
     )
     
-    return importance 
+    return importance  # 결과값은 0-1 사이 

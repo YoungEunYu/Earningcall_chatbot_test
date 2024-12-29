@@ -825,14 +825,14 @@ def main():
                     line=dict(color=topic_color),
                     hovertemplate=
                     "Topic: " + topic + "<br>" +
-                    "Importance Score: %{y:.3f}<br>" +
+                    "Importance: %{y:.1%}<br>" +
                     "<extra></extra>",
                     hoverlabel=dict(namelength=-1)
                 ))
         
         topic_trend_fig.update_layout(
             xaxis_title="Earnings Call Date",
-            yaxis_title="Topic Importance Score",  # y축 레이블 변경
+            yaxis_title="Topic Importance (%)",  # y축 레이블 변경
             height=400,
             plot_bgcolor='#2d2d2d',
             paper_bgcolor='#2d2d2d',
@@ -851,7 +851,8 @@ def main():
         st.plotly_chart(topic_trend_fig, use_container_width=True)
         
         st.caption("""
-        **Importance Score (0-1) = Term Frequency (35%) + Section Weight (35%) + Speaker Role (20%) + Topic Coherence (10%)**
+        **Topic Importance = Term Frequency (50%) + Section Weight (20%, Financial Highlights/Q&A) + 
+        Speaker Role (20%, CEO/CFO/Analysts) + Topic Coherence (10%)**
         """)
         
         # 토픽별 주요 구절 표시
