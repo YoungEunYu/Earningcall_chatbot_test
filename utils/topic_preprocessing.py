@@ -64,23 +64,13 @@ def load_earnings_calls(data_dir='data/raw'):
     texts = []
     dates = []
     
-    print(f"Looking for files in: {os.path.abspath(data_dir)}")  # 디버깅
-    
     for filename in os.listdir(data_dir):
         if filename.endswith('.txt'):
-            print(f"Processing file: {filename}")  # 디버깅
             with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as file:
                 text = file.read()
-                print(f"Text length: {len(text)}")  # 디버깅
-                if len(text.strip()) > 0:  # 빈 파일 체크
-                    texts.append(text)
-                    date = filename.split('_')[1] + '_' + filename.split('_')[2].replace('.txt', '')
-                    dates.append(date)
-                else:
-                    print(f"Warning: Empty file found: {filename}")
-    
-    if not texts:
-        raise ValueError(f"No valid text files found in {data_dir}")
+                texts.append(text)
+                date = filename.split('_')[1] + '_' + filename.split('_')[2].replace('.txt', '')
+                dates.append(date)
     
     return pd.DataFrame({'date': dates, 'text': texts})
 
@@ -223,12 +213,50 @@ def analyze_topic_trends(texts_df):
     
     for _, row in texts_df.iterrows():
         text_topics = extract_topics([row['text']])
+        topic_importance = {}
+        
         for topic in text_topics:
+            # 토픽 중요도 계산
+            importance_score = calculate_topic_importance(
+                topic['label'],
+                topic['terms'],
+                row['text'],
+                topic['coherence']
+            )
+            
             topics_over_time.append({
                 'date': row['date'],
                 'topic': topic['label'],
                 'coherence': topic['coherence'],
+                'importance': importance_score,  # 새로운 중요도 점수
                 'terms': topic['terms']
             })
     
-    return pd.DataFrame(topics_over_time) 
+    return pd.DataFrame(topics_over_time)
+
+def calculate_topic_importance(topic_label, topic_terms, text, coherence):
+    """토픽의 실제 중요도 계산"""
+    # 1. 출현 빈도 (frequency)
+    term_frequency = sum(text.lower().count(term.lower()) for term, _ in topic_terms)
+    
+    # 2. 문서 내 위치 (location)
+    paragraphs = text.split('\n\n')
+    location_scores = []
+    for i, para in enumerate(paragraphs):
+        if any(term[0].lower() in para.lower() for term in topic_terms):
+            # 문서 앞쪽에 나올수록 높은 점수
+            location_scores.append(1 - (i / len(paragraphs)))
+    location_score = max(location_scores) if location_scores else 0
+    
+    # 3. 발화자 중요도 (speaker importance)
+    speaker_importance = 1.0 if "Jeremy Barnum" in text or "Jamie Dimon" in text else 0.5
+    
+    # 최종 중요도 점수 계산
+    importance = (
+        0.4 * term_frequency/100 +  # 빈도
+        0.3 * location_score +      # 위치
+        0.2 * speaker_importance +  # 발화자
+        0.1 * coherence            # 토픽 일관성
+    )
+    
+    return importance 

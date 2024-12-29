@@ -1,8 +1,2 @@
-import streamlit as st
-
-st.set_page_config(
-    page_title="chatGPT API developmet web",
-    page_icon="📈"
-)
-
-st.title("Topic network")
+# GPT 호출 활성화/비활성화 플래그
+USE_GPT = False  # GPT 호출 비활성화

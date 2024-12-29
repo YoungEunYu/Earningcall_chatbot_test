@@ -1,0 +1,160 @@
+{
+  "2024_Q2": {
+    "quarter": "2024_Q2",
+    "topics": [
+      {
+        "id": 0,
+        "name": "Topic 0",
+        "count": 31,
+        "words": [
+          "analyst",
+          "at",
+          "go",
+          "ll",
+          "next",
+          "from",
+          "we",
+          "fargo",
+          "wells",
+          "rbc"
+        ],
+        "coherence": 0.2695098604205017,
+        "representative_docs": [
+          "Analyst at RBC Capital Markets",
+          "Analyst at RBC Capital Markets",
+          "Analyst at RBC Capital Markets"
+        ]
+      },
+      {
+        "id": 1,
+        "name": "Topic 1",
+        "count": 416,
+        "words": [
+          "on",
+          "is",
+          "so",
+          "year",
+          "as",
+          "about",
+          "for",
+          "up",
+          "think",
+          "are"
+        ],
+        "coherence": 0.045653725718318314,
+        "representative_docs": [
+          "7 billion, which was up 3% year-on- year",
+          "3 billion was up 6% year-on-year, driven by growth management fees on higher average market levels strong net inflows as well as higher brokerage activity, largely offset by deposit margin compression",
+          "I think larger point is if look at industry as a whole if sort put us into with some higher pro forma SCB, whatever might conceivably be, actually see once again quite a bit volatility year-on-year change stress capital buffer for many firms it's just sort reiterating"
+        ]
+      }
+    ],
+    "topic_distribution": {
+      "1": 0.930648769574944,
+      "0": 0.06935123042505593
+    }
+  },
+  "2024_Q3": {
+    "quarter": "2024_Q3",
+    "topics": [
+      {
+        "id": -1,
+        "name": "Topic -1",
+        "count": 7,
+        "words": [
+          "wolfe",
+          "research",
+          "analyst",
+          "at",
+          "from",
+          "mitchell",
+          "chubak",
+          "jim",
+          "steven",
+          "saul"
+        ],
+        "coherence": 0.3424705018546289,
+        "representative_docs": [
+          "Analyst at Wolfe Research",
+          "Analyst at Wolfe Research",
+          "Analyst at Wolfe Research"
+        ]
+      },
+      {
+        "id": 0,
+        "name": "Topic 0",
+        "count": 513,
+        "words": [
+          "so",
+          "is",
+          "on",
+          "for",
+          "year",
+          "we",
+          "re",
+          "but",
+          "as",
+          "be"
+        ],
+        "coherence": 0.037825068907170356,
+        "representative_docs": [
+          "You've got a fourth quarter run rate, you've got some sequential declines, you've got a trough middle year you've got a rough ballpark for full year, so can imagine trough probably is a little lower than those numbers then extent growth revolve presumes back half year, both deposit balances ongoing tailwind Card revolve, although tailwind will be a little bit less than might have otherwise thought -- I mean, sorry, a little bit less than was this year, but still a tailwind",
+          "I do think, Gerard, depends a lot on what type loans you're talking about, right? So I think end, as Jamie says, like it's capital, we're going deploy ideally grow franchise organically could include loans are almost loans on a standalone basis as well as loans are part an overall relationship where we're getting other revenue as part",
+          "I mean, I always want our people be looking at those things thinking about those things being -- but if listen what I'm saying about my about world, I'm not -- it's hard for me say we're going be market buy credit assets"
+        ]
+      },
+      {
+        "id": 1,
+        "name": "Topic 1",
+        "count": 9,
+        "words": [
+          "from",
+          "comes",
+          "next",
+          "our",
+          "isi",
+          "evercore",
+          "bank",
+          "will",
+          "with",
+          "ubs"
+        ],
+        "coherence": 0.2578887670173493,
+        "representative_docs": [
+          "Our next comes from Betsy Graseck from Morgan Stanley",
+          "Our next comes from Ebrahim Poonawala from Bank America",
+          "Our next comes from Glenn Schorr from Evercore ISI"
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Topic 2",
+        "count": 24,
+        "words": [
+          "analyst",
+          "at",
+          "stanley",
+          "morgan",
+          "bank",
+          "securities",
+          "lynch",
+          "merrill",
+          "aktiengesellschaft",
+          "deutsche"
+        ],
+        "coherence": 0.3544682748382105,
+        "representative_docs": [
+          "Analyst at Morgan Stanley",
+          "Analyst at Morgan Stanley",
+          "Analyst at Morgan Stanley"
+        ]
+      }
+    ],
+    "topic_distribution": {
+      "0": 0.9276672694394213,
+      "2": 0.0433996383363472,
+      "1": 0.0162748643761302,
+      "-1": 0.012658227848101266
+    }
+  }
+}

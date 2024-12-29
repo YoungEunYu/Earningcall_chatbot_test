@@ -13,6 +13,8 @@ from textblob import TextBlob
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import json
+from utils.topic_preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
+from utils.insight_extraction import extract_complex_insights, FINANCIAL_PHRASES
 
 # 현로젝트 루트 디렉토리를 Python 경로에 추가
 current_dir = Path(__file__).parent
@@ -30,7 +32,7 @@ except ImportError as e:
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 # GPT 호출 활성화/비활성화 플래그
-USE_GPT = False  # 테스트 중에는 False로 설정
+USE_GPT = False  # GPT 호출 비활성화
 
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
@@ -307,7 +309,7 @@ def create_enhanced_network():
         # 노드 크기 (빈도 기반)
         node_trace['marker']['size'] += (20 + node_info['frequency'] * 5,)
         
-        # 노드 색상 (���테고리 기반)
+        # 노드 색상 (테고리 기반)
         node_trace['marker']['color'] += (color_map[node_info['category']],)
     
     # 시각화
@@ -490,28 +492,30 @@ def main():
         layout="wide"
     )
     
-    # 데이터 로드
     try:
         # 1년치 어닝콜 데이터 로드
-        from utils.preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
+        from utils.topic_preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
         earnings_calls = load_earnings_calls()
-        
-        # 토픽 트렌드 분석
-        topic_trends = analyze_topic_trends(earnings_calls)
         
         # 최신 데이터의 토픽 정보
         latest_call = earnings_calls.iloc[-1]
         text_data = latest_call['text']
         
+        # 토픽 분석
+        topic_trends = analyze_topic_trends(earnings_calls)
+        
         # 최신 데이터의 토픽 추출
         topics = extract_topics([text_data])
         
+        # 감성 분석
+        sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
+        
+        # 나머지 코드...
+        
     except FileNotFoundError:
-        st.error("필요한 데이터 파일을 찾을 수 없습니다.")
-        return
+        st.error("데이터 파일을 찾을 수 없습니다. data/raw 폴더에 JPM_2024_Q3.txt 파일이 있는지 확인해주세요.")
     except Exception as e:
-        st.error(f"Error processing data: {str(e)}")
-        return
+        st.error(f"오류가 발생했습니다: {str(e)}")
     
     # # 현재 작업 디렉토리 확인
     # st.write(f"Current working directory: {os.getcwd()}")
@@ -771,33 +775,69 @@ def main():
         st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
         st.subheader("📊 Financial Topics Evolution")
         
-        # 시간 순 토픽 트렌드 시각화
         topic_trend_fig = go.Figure()
         
+        # 색상 매핑 - 더 다양한 색상으로 구분
+        colors = {
+            'Revenue & Growth': '#1f77b4',     # 파랑
+            'Market & Trading': '#2ca02c',     # 초록
+            'Credit & Risk': '#ff7f0e',        # 주황
+            'Capital & Investment': '#d62728',  # 빨강
+            'Digital & Technology': '#9467bd',  # 보라
+            'Client & Service': '#17becf',      # 청록
+            'Strategy & Outlook': '#bcbd22',    # 올리브
+            'Cost & Efficiency': '#7f7f7f',     # 회색
+            'Operational Performance': '#e377c2' # 분홍
+        }
+
+        # 토픽별 데이터 통합 및 중요도 계산
+        topic_data_aggregated = (topic_trends.groupby(['date', 'topic'])
+                               .agg({
+                                   'importance': 'mean',  # 중요도 평균
+                                   'coherence': 'mean'    # coherence 평균
+                               })
+                               .reset_index())
+        
+        # 각 분기의 top 5 토픽들을 연결하는 선 그리기
         for topic in topic_trends['topic'].unique():
-            topic_data = topic_trends[topic_trends['topic'] == topic]
+            topic_data = topic_data_aggregated[topic_data_aggregated['topic'] == topic]
+            topic_color = colors.get(topic, '#7f7f7f')
             
-            topic_trend_fig.add_trace(go.Scatter(
-                x=topic_data['date'],
-                y=topic_data['coherence'],
-                name=topic,
-                mode='lines+markers',
-                hovertemplate=
-                "<b>%{x}</b><br>" +
-                "Coherence: %{y:.2f}<br>" +
-                "Topic: " + topic + "<br>" +
-                "<extra></extra>"
-            ))
+            # 해당 토픽이 각 분기의 top 5에 포함될 때만 데이터 포인트 추가
+            x_values = []
+            y_values = []
+            
+            for date in topic_data_aggregated['date'].unique():
+                quarter_data = topic_data_aggregated[topic_data_aggregated['date'] == date]
+                quarter_top5 = quarter_data.nlargest(5, 'importance')
+                
+                if topic in quarter_top5['topic'].values:
+                    topic_importance = quarter_data[quarter_data['topic'] == topic]['importance'].iloc[0]
+                    x_values.append(date)
+                    y_values.append(topic_importance)
+            
+            if x_values:  # 데이터 포인트가 있는 경우만 trace 추가
+                topic_trend_fig.add_trace(go.Scatter(
+                    x=x_values,
+                    y=y_values,
+                    name=topic,
+                    mode='lines+markers',
+                    line=dict(color=topic_color),
+                    hovertemplate=
+                    "Topic: " + topic + "<br>" +
+                    "Importance Score: %{y:.3f}<br>" +
+                    "<extra></extra>",
+                    hoverlabel=dict(namelength=-1)
+                ))
         
         topic_trend_fig.update_layout(
             xaxis_title="Earnings Call Date",
-            yaxis_title="Topic Coherence",
+            yaxis_title="Topic Importance Score",  # y축 레이블 변경
             height=400,
             plot_bgcolor='#2d2d2d',
             paper_bgcolor='#2d2d2d',
             font=dict(color='white'),
             margin=dict(t=30),
-            hovermode='x unified',
             showlegend=True,
             legend=dict(
                 yanchor="top",
@@ -809,6 +849,10 @@ def main():
         )
         
         st.plotly_chart(topic_trend_fig, use_container_width=True)
+        
+        st.caption("""
+        **Importance Score (0-1) = Term Frequency (35%) + Section Weight (35%) + Speaker Role (20%) + Topic Coherence (10%)**
+        """)
         
         # 토픽별 주요 구절 표시
         st.markdown("### Key Phrases by Topic")
@@ -1025,10 +1069,10 @@ def main():
     st.plotly_chart(time_series_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 발언자 감성 분석 섹션
+    # Speaker Sentiment Analysis 섹션
     st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
     st.subheader("👥 Speaker Sentiment Analysis")
-
+    
     # 발언자 목록과 데이터 가져오기
     sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
 
@@ -1038,16 +1082,34 @@ def main():
     if not barnum_statements.empty:
         st.subheader("CFO Jeremy Barnum's Statements")
         
+        # 처음 3개의 발언 표시
+        statements_shown = 0
+        remaining_statements = []
+        
         for _, row in barnum_statements.iterrows():
             text = row['text'].strip()
-            # 4단어 초과인 발언만 표시
-            if len(text.split()) > 4:
-                st.markdown(f"""
-                    <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
-                        <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {row['sentiment_score']:.3f}</div>
-                        <div>{text}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+            if len(text.split()) > 6:
+                if statements_shown < 3:
+                    st.markdown(f"""
+                        <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
+                            <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {row['sentiment_score']:.3f}</div>
+                            <div>{text}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    statements_shown += 1
+                else:
+                    remaining_statements.append((text, row['sentiment_score']))
+        
+        # 나머지 발언들은 expander에 넣기
+        if remaining_statements:
+            with st.expander("Show More Statements", expanded=False):
+                for text, score in remaining_statements:
+                    st.markdown(f"""
+                        <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
+                            <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {score:.3f}</div>
+                            <div>{text}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
     else:
         st.info("No statements found from Jeremy Barnum in this transcript.")
 

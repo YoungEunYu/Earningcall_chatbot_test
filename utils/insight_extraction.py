@@ -115,7 +115,7 @@ def setup_directories():
     # 프로젝트 루트 디렉토리
     root_dir = Path(__file__).parent.parent
     
-    # 필요한 ��렉토리들
+    # 필요한 디렉토리들
     directories = [
         'data',
         'data/raw',
@@ -150,6 +150,34 @@ def main():
         print("Error: Input file not found. Please ensure JPM_2024_Q3.txt exists in data/raw/")
     except Exception as e:
         print(f"Error during processing: {str(e)}")
+
+FINANCIAL_PHRASES = {
+    'Revenue & Growth': [
+        'revenue', 'growth', 'sales', 'income', 'earnings', 'profit', 'margin',
+        'net revenue', 'revenue growth', 'sales growth', 'organic growth',
+        'market share', 'top line', 'bottom line', 'profitability'
+    ],
+    'Market & Trading': [
+        'market', 'trading', 'volatility', 'spread', 'fee', 'commission',
+        'fixed income', 'equity trading', 'market making', 'securities',
+        'derivatives', 'fx', 'foreign exchange', 'treasury'
+    ],
+    'Credit & Risk': [
+        'credit', 'risk', 'loan', 'lending', 'portfolio', 'default', 'exposure',
+        'credit quality', 'risk management', 'credit risk', 'loan loss',
+        'provision', 'reserve', 'allowance', 'delinquency'
+    ],
+    'Capital & Investment': [
+        'capital', 'investment', 'asset', 'equity', 'tier', 'ratio',
+        'capital ratio', 'return on equity', 'roe', 'roa', 'investment banking',
+        'wealth management', 'assets under management', 'aum'
+    ],
+    'Digital & Technology': [
+        'digital', 'technology', 'platform', 'mobile', 'online', 'payment',
+        'digital banking', 'mobile app', 'digital platform', 'innovation',
+        'fintech', 'cyber', 'cloud', 'automation', 'ai'
+    ]
+}
 
 if __name__ == "__main__":
     main() 
