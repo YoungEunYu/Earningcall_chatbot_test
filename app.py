@@ -15,6 +15,7 @@ import torch
 import json
 from utils.topic_preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
 from utils.insight_extraction import extract_complex_insights, FINANCIAL_PHRASES
+import re
 
 # 현로젝트 루트 디렉토리를 Python 경로에 추가
 current_dir = Path(__file__).parent
@@ -484,6 +485,74 @@ def get_financial_context(temporal_df, selected_index):
     
     return current_text, temporal_df.iloc[selected_index]['sentiment_score']
 
+def extract_quarterly_metrics(text):
+    """어닝콜 텍스트에서 주요 지표 추출"""
+    metrics = {}
+    
+    # CIB 지표 추출
+    if "IB fees were up" in text:
+        ib_fees_match = re.search(r"IB fees were up (\d+)%", text)
+        if ib_fees_match:
+            metrics['CIB'] = int(ib_fees_match.group(1))
+    
+    # AWM 지표 추출
+    if "AUM of $" in text:
+        aum_match = re.search(r"AUM of \$(\d+\.\d+) trillion.*?up (\d+)%", text)
+        if aum_match:
+            metrics['AWM'] = int(aum_match.group(2))
+    
+    # CCB 지표 추출
+    if "CCB reported net income" in text:
+        ccb_match = re.search(r"revenue of \$(\d+\.\d+) billion, which was up (\d+)%", text)
+        if ccb_match:
+            metrics['CCB'] = int(ccb_match.group(2))
+    
+    return metrics
+
+def extract_hiring_trends(text):
+    """어닝콜 텍스트에서 채용 관련 정보 추출"""
+    hiring_info = {
+        'Private Banking': 0,
+        'Technology': 0,
+        'Operations': 0
+    }
+    
+    # 채용 관련 텍스트 분석
+    if "growth in our private banking advisor teams" in text:
+        hiring_info['Private Banking'] += 1
+    if "technology and marketing" in text:
+        hiring_info['Technology'] += 1
+    if "operations" in text.lower():
+        hiring_info['Operations'] += 1
+        
+    return hiring_info
+
+def extract_strategic_focus(text):
+    """어닝콜 텍스트에서 전략적 투자 방향 추출"""
+    strategic = {
+        '🌐 International': '',
+        '💻 Digital': '',
+        '🏦 Network': ''
+    }
+    
+    # International 전략
+    if "AWM" in text and "net inflows" in text:
+        inflow_match = re.search(r"net inflows were \$(\d+) billion", text)
+        if inflow_match:
+            strategic['🌐 International'] = f"Net inflows ${inflow_match.group(1)}B"
+            
+    # Digital 전략
+    if "digital" in text.lower():
+        digital_info = re.search(r"digital.*?([\w\s]+(?:up|increased)[\w\s]+\d+%)", text, re.I)
+        if digital_info:
+            strategic['💻 Digital'] = digital_info.group(1)
+            
+    # Branch Network
+    if "retail deposit" in text.lower():
+        strategic['🏦 Network'] = "Leading retail deposit share position"
+        
+    return strategic
+
 def main():
     # 페이지 설정
     st.set_page_config(
@@ -509,6 +578,19 @@ def main():
         
         # 감성 분석
         sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
+        
+        # 분기별 데이터 추출
+        quarters = ['2024_Q3', '2024_Q2', '2024_Q1', '2023_Q4']
+        quarterly_data = {}
+        
+        for quarter in quarters:
+            with open(f'data/raw/JPM_{quarter}.txt', 'r') as f:
+                text = f.read()
+                quarterly_data[quarter] = {
+                    'metrics': extract_quarterly_metrics(text),
+                    'hiring': extract_hiring_trends(text),
+                    'strategic': extract_strategic_focus(text)
+                }
         
         # 나머지 코드...
         
@@ -768,11 +850,11 @@ def main():
             </div>
         """, unsafe_allow_html=True)
     
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
     # 차트 영역
     col1, col2 = st.columns([2,1])
-    
     with col1:
-        st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
         st.subheader("📊 Financial Topics Evolution")
         
         topic_trend_fig = go.Figure()
@@ -854,23 +936,8 @@ def main():
         **Topic Importance = Term Frequency (50%) + Section Weight (20%, Financial Highlights/Q&A) + 
         Speaker Role (20%, CEO/CFO/Analysts) + Topic Coherence (10%)**
         """)
-        
-        # 토픽별 주요 구절 표시
-        st.markdown("### Key Phrases by Topic")
-        for topic in topic_trends['topic'].unique():
-            topic_data = topic_trends[topic_trends['topic'] == topic].iloc[-1]
-            terms = [term for term, _ in eval(str(topic_data['terms']))]
-            
-            st.markdown(f"""
-                <div style='background: #363636; padding: 10px; border-radius: 5px; margin: 5px 0;'>
-                    <b>{topic}</b>: {', '.join(terms[:5])}
-                </div>
-            """, unsafe_allow_html=True)
-            
-        st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
-        st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
         st.subheader("☁️ AI-Powered Word Cloud")
         
         def get_ai_keywords(text, period_type="quarterly"):
@@ -998,24 +1065,8 @@ def main():
         
         st.markdown("</div>", unsafe_allow_html=True)
     
-    # 네트워크 맵
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-    st.subheader("🔄 Financial Topic Network")
-    
-    try:
-        from utils.visualization import create_topic_network
-        network_fig = create_topic_network(topics)
-        st.plotly_chart(network_fig, use_container_width=True)
-    except Exception as e:
-        st.error(f"Error creating network visualization: {str(e)}")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # 새로운 시각화 섹션 추가 (차트 영역 다음에)
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+    # 새로운 시각화 섹션 추가
     st.subheader("🎭 Sentiment Analysis")
-    
-    # 감성 분석 시각화
     pie_fig, keywords_fig = create_sentiment_viz()
     col1, col2 = st.columns(2)
     
@@ -1023,22 +1074,13 @@ def main():
         st.plotly_chart(pie_fig, use_container_width=True)
     with col2:
         st.plotly_chart(keywords_fig, use_container_width=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # 향상된 키워드 네트워크
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-    st.subheader("🔄 Enhanced Keyword Network")
-    network_fig = create_enhanced_network()
-    st.plotly_chart(network_fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
     # 시계열 분석 추가
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
     st.subheader("📈 Time Series Analysis of Financial Metrics")
-
+    
     # 시계열 데이터 로드
-    time_series_data = pd.read_csv('data/time_series_data.csv')  # 시계열 데이터 파일 로드
+    time_series_data = pd.read_csv('data/time_series_data.csv')
 
     # 시계열 데이터 시각화
     time_series_fig = go.Figure()
@@ -1068,10 +1110,9 @@ def main():
 
     # 시각화 출력
     st.plotly_chart(time_series_fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
     # Speaker Sentiment Analysis 섹션
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
     st.subheader("👥 Speaker Sentiment Analysis")
     
     # 발언자 목록과 데이터 가져오기
@@ -1113,11 +1154,9 @@ def main():
                     """, unsafe_allow_html=True)
     else:
         st.info("No statements found from Jeremy Barnum in this transcript.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
     # 감성 분석 섹션
-    st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
     st.subheader("🎭 Earnings Call Sentiment Analysis")
 
     # 감성 분석 시각화 생성
@@ -1143,6 +1182,148 @@ def main():
                     <div>{insight_text}</div>
                 </div>
             """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    # 네트워크 맵
+    st.subheader("🔄 Financial Topic Network")
+    try:
+        from utils.visualization import create_topic_network
+        network_fig = create_topic_network(topics)
+        st.plotly_chart(network_fig, use_container_width=True)
+    except Exception as e:
+        st.error(f"Error creating network visualization: {str(e)}")
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    # 향상된 키워드 네트워크
+    st.subheader("🔄 Enhanced Keyword Network")
+    network_fig = create_enhanced_network()
+    st.plotly_chart(network_fig, use_container_width=True)
+
+    # Financial Topic Network 섹션 끝
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.subheader("📈 JPM Growth & Hiring Trends")
+    
+    # 탭 생성
+    trend_tabs = st.tabs(["Business Growth", "Hiring & Tech", "Strategic Focus"])
+    
+    with trend_tabs[0]:
+        st.caption("Quarter-over-Quarter Business Performance")
+        # Line chart for business growth
+        business_metrics = {
+            'Q4 2023': {
+                'CIB (Corporate & Investment Banking)': 31,
+                'AWM (Asset & Wealth Management)': 14,
+                'CCB (Consumer & Community Banking)': 8
+            },
+            'Q1 2024': {
+                'CIB (Corporate & Investment Banking)': 42,
+                'AWM (Asset & Wealth Management)': 18,
+                'CCB (Consumer & Community Banking)': 12
+            },
+            'Q2 2024': {
+                'CIB (Corporate & Investment Banking)': 50,
+                'AWM (Asset & Wealth Management)': 15,
+                'CCB (Consumer & Community Banking)': 3
+            },
+            'Q3 2024': {
+                'CIB (Corporate & Investment Banking)': 31,
+                'AWM (Asset & Wealth Management)': 23,
+                'CCB (Consumer & Community Banking)': -3
+            }
+        }
+        business_df = pd.DataFrame(business_metrics).T
+        # 명시적으로 순서 지정
+        quarter_order = ['Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024']
+        business_df = business_df.reindex(quarter_order)
+        # Plotly를 사용한 라인 차트
+        fig = go.Figure()
+        
+        for column in business_df.columns:
+            fig.add_trace(go.Scatter(
+                x=business_df.index,
+                y=business_df[column],
+                name=column,
+                mode='lines+markers'
+            ))
+        
+        fig.update_layout(
+            title="Business Performance by Division",
+            xaxis_title="Quarter",
+            yaxis_title="Year-over-Year Growth (%)",
+            height=400,
+            hovermode='x unified'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("Values shown are year-over-year growth rates (%)")
+    
+    with trend_tabs[1]:
+        st.caption("Hiring & Technology Investment Trends")
+        st.markdown("""
+            ### Quotes
+            
+            #### Q3 2024
+            - 💼 **Compensation & Hiring**: 
+                - "continued growth in our private banking advisor teams"
+                - "higher compensation, primarily revenue-related compensation"
+            - 💻 **Technology**: 
+                - "continued growth in technology and marketing"
+                - "digital platform enhancement"
+            
+            #### Q2 2024
+            - 💼 **Compensation & Hiring**: 
+                - "expenses up 12% year-on-year, largely driven by higher compensation"
+                - "field compensation and continued growth in technology and marketing"
+            - 💻 **Technology**: 
+                - "strong customer acquisition across checking accounts and card"
+                - "record number of first-time investors"
+            
+            #### Q1 2024
+            - 💼 **Compensation & Hiring**: 
+                - "growth in our private banking advisor teams"
+            - 💻 **Technology**: 
+                - "digital platform growth"
+                - "increased mobile adoption"
+            
+            #### Q4 2023
+            - 💼 **Compensation & Hiring**: 
+                - "higher compensation, primarily revenue-related compensation"
+            - 💻 **Technology**: 
+                - "technology infrastructure investments"
+        """)
+    
+    with trend_tabs[2]:
+        st.caption("Strategic Investment Focus Areas - Quarterly Comparison")
+        strategic_focus = {
+            'Q3 2024': {
+                '🌐 International': 'Record quarterly revenues, $72B long-term net inflows',
+                '💻 Digital': 'Ranked #1 in retail deposit share, strong customer acquisition',
+                '🏦 Network': '#1 in retail deposit share for fourth straight year'
+            },
+            'Q2 2024': {
+                '🌐 International': 'IB fees up 50% YoY, #1 wallet share of 9.5%',
+                '💻 Digital': 'Record first-time investors, strong customer acquisition',
+                '🏦 Network': 'Strong net inflows across AWM'
+            },
+            'Q1 2024': {
+                '🌐 International': 'Strong net inflows led by equities and fixed income',
+                '💻 Digital': 'Digital platform growth, increased mobile adoption',
+                '🏦 Network': 'Continued branch expansion in key markets'
+            },
+            'Q4 2023': {
+                '🌐 International': 'Net inflows $52B, led by equities and fixed income',
+                '💻 Digital': 'Digital users up 12%, AI projects initiated',
+                '🏦 Network': 'Market share gains in deposits'
+            }
+        }
+        
+        # 분기별 전략 포커스 표시
+        for quarter, strategies in strategic_focus.items():
+            st.subheader(quarter)
+            for area, details in strategies.items():
+                st.markdown(f"**{area}**\n- {details}")
+            st.markdown("---")
 
 if __name__ == "__main__":
     main()

@@ -8,12 +8,20 @@ from gensim.models.phrases import Phrases, Phraser
 import re
 import os
 import pandas as pd
+import ssl
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
 # NLTK 데이터 다운로드
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
-nltk.download('stopwords')
+nltk.download('punkt', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
+nltk.download('wordnet', quiet=True)
+nltk.download('stopwords', quiet=True)
 
 # 금융 도메인 사전 (더 구체적인 키워드 추가)
 FINANCIAL_PHRASES = {
