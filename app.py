@@ -33,7 +33,7 @@ except ImportError as e:
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 # GPT 호출 활성화/비활성화 플래그
-USE_GPT = False  # GPT 호출 비활성화
+USE_GPT = True   # GPT 호출 활성화
 
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
