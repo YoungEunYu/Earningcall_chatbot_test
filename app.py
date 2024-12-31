@@ -1076,42 +1076,6 @@ def main():
         st.plotly_chart(keywords_fig, use_container_width=True)
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # 시계열 분석 추가
-    st.subheader("📈 Time Series Analysis of Financial Metrics")
-    
-    # 시계열 데이터 로드
-    time_series_data = pd.read_csv('data/time_series_data.csv')
-
-    # 시계열 데이터 시각화
-    time_series_fig = go.Figure()
-
-    # 각 융 지표 대해 시계열 그래프 추가
-    for metric in ['revenue', 'profit', 'expenses']:  # 예시로 수익, 이익, 비용 지표 사용
-        time_series_fig.add_trace(go.Scatter(
-            x=time_series_data['date'],
-            y=time_series_data[metric],
-            mode='lines+markers',
-            name=metric.capitalize(),
-            hovertemplate="<b>%{x}</b><br>" +
-                          f"{metric.capitalize()}: %{{y:.2f}}<br>" +
-                          "<extra></extra>"
-        ))
-
-    # 레이아웃 설정
-    time_series_fig.update_layout(
-        title="Time Series Analysis of Financial Metrics",
-        xaxis_title="Date",
-        yaxis_title="Value",
-        plot_bgcolor='#2d2d2d',
-        paper_bgcolor='#2d2d2d',
-        font=dict(color='white'),
-        height=400
-    )
-
-    # 시각화 출력
-    st.plotly_chart(time_series_fig, use_container_width=True)
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
     # Speaker Sentiment Analysis 섹션
     st.subheader("👥 Speaker Sentiment Analysis")
     
@@ -1184,22 +1148,8 @@ def main():
             """, unsafe_allow_html=True)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
-    # 네트워크 맵
-    st.subheader("🔄 Financial Topic Network")
-    try:
-        from utils.visualization import create_topic_network
-        network_fig = create_topic_network(topics)
-        st.plotly_chart(network_fig, use_container_width=True)
-    except Exception as e:
-        st.error(f"Error creating network visualization: {str(e)}")
+   
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    # 향상된 키워드 네트워크
-    st.subheader("🔄 Enhanced Keyword Network")
-    network_fig = create_enhanced_network()
-    st.plotly_chart(network_fig, use_container_width=True)
-
-    # Financial Topic Network 섹션 끝
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.subheader("📈 JPM Growth & Hiring Trends")
@@ -1325,6 +1275,22 @@ def main():
                 st.markdown(f"**{area}**\n- {details}")
             st.markdown("---")
 
+    # 네트워크 맵
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.subheader("🔄 Financial Topic Network")
+    try:
+        from utils.visualization import create_topic_network
+        network_fig = create_topic_network(topics)
+        st.plotly_chart(network_fig, use_container_width=True)
+    except Exception as e:
+        st.error(f"Error creating network visualization: {str(e)}")
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    # 향상된 키워드 네트워크
+    st.subheader("🔄 Enhanced Keyword Network")
+    network_fig = create_enhanced_network()
+    st.plotly_chart(network_fig, use_container_width=True)
+
 if __name__ == "__main__":
     main()
 
@@ -1381,4 +1347,3 @@ EARNINGS_CALL_INSIGHTS = {
         ]
     }
 }
-
