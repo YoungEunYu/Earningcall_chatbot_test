@@ -38,7 +38,7 @@ USE_GPT = False  # GPT 호출 비활성화
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
     if not USE_GPT:
-        return "GPT 호출 비활성화되었습니다."
+        return "GPT call has been disabled."
 
     try:
         response = client.chat.completions.create(
@@ -711,7 +711,7 @@ def main():
     # 메인 
     st.markdown("""
         <div class='main-header'>
-            <h1 style='margin:0;'>JPMorgan Chase Q3 2024 Earnings Call Analysis</h1>
+            <h1 style='margin:0;'>JPMorgan Chase Q3 2024 Earnings Call Snapshot</h1>
             <p style='margin:0.5rem 0 0 0;'>AI-Powered Insights from the Latest Earnings Call</p>
         </div>
     """, unsafe_allow_html=True)
@@ -776,7 +776,7 @@ def main():
         st.markdown("""
             <div style='padding: 1rem; background: linear-gradient(180deg, #0033cc 0%, #0066ff 100%); 
                         color: white; border-radius: 10px; margin-bottom: 1rem;'>
-                <h3 style='margin:0;'>💬 AI Financial Analyst</h3>
+                <h3 style='margin:0;'>💬 Earnings Insights Assistant</h3>
             </div>
         """, unsafe_allow_html=True)
         
@@ -938,7 +938,7 @@ def main():
         """)
     
     with col2:
-        st.subheader("☁️ AI-Powered Word Cloud")
+        st.subheader("☁️ GPT Word Cloud")
         
         def get_ai_keywords(text, period_type="quarterly"):
             """GPT를 사용하여 핵식 키워드와 가중치 추출"""
