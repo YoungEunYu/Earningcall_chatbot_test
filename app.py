@@ -33,7 +33,7 @@ except ImportError as e:
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 # GPT 호출 활성화/비활성화 플래그
-USE_GPT = True   # GPT 호출 활성화
+USE_GPT = False  # GPT 호출 비활성화
 
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
@@ -815,42 +815,40 @@ def main():
             - What's the outlook for next quarter?
             """)
     
-    # 요 지표 행
-    col1, col2, col3, col4 = st.columns(4)
+    # # 요 지표 행
+    # col1, col2, col3, col4 = st.columns(4)
     
-    with col1:
-        st.markdown("""
-            <div class='metric-card'>
-                <div class='metric-value'>{}</div>
-                <div class='metric-label'>Topics Identified</div>
-            </div>
-        """.format(len(topic_trends['topic'].unique())), unsafe_allow_html=True)
+    # with col1:
+    #     st.markdown("""
+    #         <div class='metric-card'>
+    #             <div class='metric-value'>{}</div>
+    #             <div class='metric-label'>Topics Identified</div>
+    #         </div>
+    #     """.format(len(topic_trends['topic'].unique())), unsafe_allow_html=True)
     
-    with col2:
-        st.markdown("""
-            <div class='metric-card'>
-                <div class='metric-value'>{}</div>
-                <div class='metric-label'>Total Phrases Analyzed</div>
-            </div>
-        """.format(len(topic_trends)), unsafe_allow_html=True)
+    # with col2:
+    #     st.markdown("""
+    #         <div class='metric-card'>
+    #             <div class='metric-value'>{}</div>
+    #             <div class='metric-label'>Total Phrases Analyzed</div>
+    #         </div>
+    #     """.format(len(topic_trends)), unsafe_allow_html=True)
     
-    with col3:
-        st.markdown("""
-            <div class='metric-card'>
-                <div class='metric-value'>{}</div>
-                <div class='metric-label'>Key Topics</div>
-            </div>
-        """.format(len(topic_trends[topic_trends['coherence'] > topic_trends['coherence'].mean()])), unsafe_allow_html=True)
+    # with col3:
+    #     st.markdown("""
+    #         <div class='metric-card'>
+    #             <div class='metric-value'>{}</div>
+    #             <div class='metric-label'>Key Topics</div>
+    #         </div>
+    #     """.format(len(topic_trends[topic_trends['coherence'] > topic_trends['coherence'].mean()])), unsafe_allow_html=True)
     
-    with col4:
-        st.markdown("""
-            <div class='metric-card'>
-                <div class='metric-value'>Q3 2024</div>
-                <div class='metric-label'>Earnings Period</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # with col4:
+    #     st.markdown("""
+    #         <div class='metric-card'>
+    #             <div class='metric-value'>Q3 2024</div>
+    #             <div class='metric-label'>Earnings Period</div>
+    #         </div>
+    #     """, unsafe_allow_html=True)
 
     # 차트 영역
     col1, col2 = st.columns([2,1])
@@ -1120,38 +1118,36 @@ def main():
         st.info("No statements found from Jeremy Barnum in this transcript.")
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # 감성 분석 섹션
-    st.subheader("🎭 Earnings Call Sentiment Analysis")
+    # # 감성 분석 섹션
+    # st.subheader("🎭 Earnings Call Sentiment Analysis")
 
-    # 감성 분석 시각화 생성
-    sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
+    # # 감성 분석 시각화 생성
+    # sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
 
-    # 그래프 표시
-    st.plotly_chart(sentiment_fig, use_container_width=True)
+    # # 그래프 표시
+    # st.plotly_chart(sentiment_fig, use_container_width=True)
 
-    # 선택기 추가
-    if not temporal_data.empty:
-        selected_index = st.select_slider(
-            "Select a point in time",
-            options=range(len(temporal_data)),
-            format_func=lambda x: f"Time {x}"
-        )
+    # # 선택기 추가
+    # if not temporal_data.empty:
+    #     selected_index = st.select_slider(
+    #         "Select a point in time",
+    #         options=range(len(temporal_data)),
+    #         format_func=lambda x: f"Time {x}"
+    #     )
 
-        # 금융 인사이트 추출 및 표시
-        insight_text, sentiment = get_financial_context(temporal_data, selected_index)
-        if is_key_financial_insight(insight_text):
-            st.markdown(f"""
-                <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
-                    <div style='color: #8ab4f8; margin-bottom: 5px;'>Financial Insight (Sentiment: {sentiment:.3f})</div>
-                    <div>{insight_text}</div>
-                </div>
-            """, unsafe_allow_html=True)
+    #     # 금융 인사이트 추출 및 표시
+    #     insight_text, sentiment = get_financial_context(temporal_data, selected_index)
+    #     if is_key_financial_insight(insight_text):
+    #         st.markdown(f"""
+    #             <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
+    #                 <div style='color: #8ab4f8; margin-bottom: 5px;'>Financial Insight (Sentiment: {sentiment:.3f})</div>
+    #                 <div>{insight_text}</div>
+    #             </div>
+    #         """, unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # st.markdown("<br><br>", unsafe_allow_html=True)
    
 
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
     st.subheader("📈 JPM Growth & Hiring Trends")
     
     # 탭 생성
@@ -1274,22 +1270,6 @@ def main():
             for area, details in strategies.items():
                 st.markdown(f"**{area}**\n- {details}")
             st.markdown("---")
-
-    # 네트워크 맵
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.subheader("🔄 Financial Topic Network")
-    try:
-        from utils.visualization import create_topic_network
-        network_fig = create_topic_network(topics)
-        st.plotly_chart(network_fig, use_container_width=True)
-    except Exception as e:
-        st.error(f"Error creating network visualization: {str(e)}")
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    # 향상된 키워드 네트워크
-    st.subheader("🔄 Enhanced Keyword Network")
-    network_fig = create_enhanced_network()
-    st.plotly_chart(network_fig, use_container_width=True)
 
 if __name__ == "__main__":
     main()
