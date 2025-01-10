@@ -16,6 +16,7 @@ import json
 from utils.topic_preprocessing import load_earnings_calls, analyze_topic_trends, extract_topics
 from utils.insight_extraction import extract_complex_insights, FINANCIAL_PHRASES
 import re
+import altair as alt
 
 # 현로젝트 루트 디렉토리를 Python 경로에 추가
 current_dir = Path(__file__).parent
@@ -581,42 +582,45 @@ def main():
         
         # 분기별 데이터 추출
         quarters = ['2024_Q3', '2024_Q2', '2024_Q1', '2023_Q4']
-        quarterly_data = {}
+        quarterly_data = {
+            '2023_Q4': {
+                'Net Income': 9.3, 'EPS': 3.04, 'Revenue': 39.9
+            },
+            '2024_Q1': {
+                'Net Income': 13.4, 'EPS': 4.44, 'Revenue': 42.5
+            },
+            '2024_Q2': {
+                'Net Income': 18.1, 'EPS': 6.12, 'Revenue': 51.0
+            },
+            '2024_Q3': {
+                'Net Income': 12.9, 'EPS': 4.37, 'Revenue': 43.3
+            }
+        }
         
-        for quarter in quarters:
-            with open(f'data/raw/JPM_{quarter}.txt', 'r') as f:
-                text = f.read()
-                quarterly_data[quarter] = {
-                    'metrics': extract_quarterly_metrics(text),
-                    'hiring': extract_hiring_trends(text),
-                    'strategic': extract_strategic_focus(text)
-                }
-        
+        # 분기별 주요 내용 설정
+        quarterly_highlights = {
+            '2023_Q4': [
+                "Return on Tangible Common Equity (ROTCE): 15%",  # ROTCE: Return on Tangible Common Equity
+                "Full-year Net Income: $50 billion"
+            ],
+            '2024_Q1': [
+                "ROTCE: 21%",  # ROTCE: Return on Tangible Common Equity
+                "Strong performance in investment banking fees"
+            ],
+            '2024_Q2': [
+                "Commercial & Investment Banking (CIB): saw a 50% increase in IB fees"  # CIB: Commercial & Investment Bank
+            ],
+            '2024_Q3': [
+                "CIB: reported a 31% increase in IB fees"  # CIB: Commercial & Investment Bank
+            ]
+        }
+
         # 나머지 코드...
         
     except FileNotFoundError:
         st.error("데이터 파일을 찾을 수 없습니다. data/raw 폴더에 JPM_2024_Q3.txt 파일이 있는지 확인해주세요.")
     except Exception as e:
         st.error(f"오류가 발생했습니다: {str(e)}")
-    
-    # # 현재 작업 디렉토리 확인
-    # st.write(f"Current working directory: {os.getcwd()}")
-
-    # # Q4 2023 일 절대 경로
-    # q4_path = os.path.abspath('data/raw/JPM_2023_Q4.txt')
-    # st.write(f"Q4 2023 absolute path: {q4_path}")
-
-    # # 파일 존 여부 확인
-    # st.write(f"File exists: {os.path.exists(q4_path)}")
-
-    # # 파일 크기 확인
-    # st.write(f"File size: {os.path.getsize(q4_path)} bytes")
-
-    # # 파일 내용 직접 읽기
-    # with open(q4_path, 'r', encoding='utf-8') as f:
-    #     content = f.read()
-    #     st.write(f"Content length: {len(content)}")
-    #     st.write("First 100 characters:", content[:100])
     
     # CSS 스타일 (기존 것 유지)
     st.markdown("""
@@ -815,41 +819,6 @@ def main():
             - What's the outlook for next quarter?
             """)
     
-    # # 요 지표 행
-    # col1, col2, col3, col4 = st.columns(4)
-    
-    # with col1:
-    #     st.markdown("""
-    #         <div class='metric-card'>
-    #             <div class='metric-value'>{}</div>
-    #             <div class='metric-label'>Topics Identified</div>
-    #         </div>
-    #     """.format(len(topic_trends['topic'].unique())), unsafe_allow_html=True)
-    
-    # with col2:
-    #     st.markdown("""
-    #         <div class='metric-card'>
-    #             <div class='metric-value'>{}</div>
-    #             <div class='metric-label'>Total Phrases Analyzed</div>
-    #         </div>
-    #     """.format(len(topic_trends)), unsafe_allow_html=True)
-    
-    # with col3:
-    #     st.markdown("""
-    #         <div class='metric-card'>
-    #             <div class='metric-value'>{}</div>
-    #             <div class='metric-label'>Key Topics</div>
-    #         </div>
-    #     """.format(len(topic_trends[topic_trends['coherence'] > topic_trends['coherence'].mean()])), unsafe_allow_html=True)
-    
-    # with col4:
-    #     st.markdown("""
-    #         <div class='metric-card'>
-    #             <div class='metric-value'>Q3 2024</div>
-    #             <div class='metric-label'>Earnings Period</div>
-    #         </div>
-    #     """, unsafe_allow_html=True)
-
     # 차트 영역
     col1, col2 = st.columns([2,1])
     with col1:
@@ -1118,91 +1087,10 @@ def main():
         st.info("No statements found from Jeremy Barnum in this transcript.")
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # # 감성 분석 섹션
-    # st.subheader("🎭 Earnings Call Sentiment Analysis")
-
-    # # 감성 분석 시각화 생성
-    # sentiment_fig, temporal_data = create_temporal_sentiment_viz(text_data)
-
-    # # 그래프 표시
-    # st.plotly_chart(sentiment_fig, use_container_width=True)
-
-    # # 선택기 추가
-    # if not temporal_data.empty:
-    #     selected_index = st.select_slider(
-    #         "Select a point in time",
-    #         options=range(len(temporal_data)),
-    #         format_func=lambda x: f"Time {x}"
-    #     )
-
-    #     # 금융 인사이트 추출 및 표시
-    #     insight_text, sentiment = get_financial_context(temporal_data, selected_index)
-    #     if is_key_financial_insight(insight_text):
-    #         st.markdown(f"""
-    #             <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
-    #                 <div style='color: #8ab4f8; margin-bottom: 5px;'>Financial Insight (Sentiment: {sentiment:.3f})</div>
-    #                 <div>{insight_text}</div>
-    #             </div>
-    #         """, unsafe_allow_html=True)
-
-    # st.markdown("<br><br>", unsafe_allow_html=True)
-   
-
     st.subheader("📈 JPM Growth & Hiring Trends")
     
     # 탭 생성
     trend_tabs = st.tabs(["Business Growth", "Hiring & Tech", "Strategic Focus"])
-    
-    with trend_tabs[0]:
-        st.caption("Quarter-over-Quarter Business Performance")
-        # Line chart for business growth
-        business_metrics = {
-            'Q4 2023': {
-                'CIB (Corporate & Investment Banking)': 31,
-                'AWM (Asset & Wealth Management)': 14,
-                'CCB (Consumer & Community Banking)': 8
-            },
-            'Q1 2024': {
-                'CIB (Corporate & Investment Banking)': 42,
-                'AWM (Asset & Wealth Management)': 18,
-                'CCB (Consumer & Community Banking)': 12
-            },
-            'Q2 2024': {
-                'CIB (Corporate & Investment Banking)': 50,
-                'AWM (Asset & Wealth Management)': 15,
-                'CCB (Consumer & Community Banking)': 3
-            },
-            'Q3 2024': {
-                'CIB (Corporate & Investment Banking)': 31,
-                'AWM (Asset & Wealth Management)': 23,
-                'CCB (Consumer & Community Banking)': -3
-            }
-        }
-        business_df = pd.DataFrame(business_metrics).T
-        # 명시적으로 순서 지정
-        quarter_order = ['Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024']
-        business_df = business_df.reindex(quarter_order)
-        # Plotly를 사용한 라인 차트
-        fig = go.Figure()
-        
-        for column in business_df.columns:
-            fig.add_trace(go.Scatter(
-                x=business_df.index,
-                y=business_df[column],
-                name=column,
-                mode='lines+markers'
-            ))
-        
-        fig.update_layout(
-            title="Business Performance by Division",
-            xaxis_title="Quarter",
-            yaxis_title="Year-over-Year Growth (%)",
-            height=400,
-            hovermode='x unified'
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption("Values shown are year-over-year growth rates (%)")
     
     with trend_tabs[1]:
         st.caption("Hiring & Technology Investment Trends")
@@ -1270,6 +1158,36 @@ def main():
             for area, details in strategies.items():
                 st.markdown(f"**{area}**\n- {details}")
             st.markdown("---")
+
+    # 시각화 및 텍스트 표시
+    with trend_tabs[0]:
+        st.caption("Quarter-over-Quarter Financial Performance")
+        # Altair chart for financial metrics with units in tooltips
+        metrics_df = pd.DataFrame([
+            {'Quarter': quarter, 'Metric': 'Net Income', 'Value': data['Net Income'], 'Unit': 'billion'} for quarter, data in quarterly_data.items()
+        ] + [
+            {'Quarter': quarter, 'Metric': 'EPS', 'Value': data['EPS'], 'Unit': 'dollars'} for quarter, data in quarterly_data.items()
+        ] + [
+            {'Quarter': quarter, 'Metric': 'Revenue', 'Value': data['Revenue'], 'Unit': 'billion'} for quarter, data in quarterly_data.items()
+        ])
+
+        chart = alt.Chart(metrics_df).mark_line(point=True).encode(
+            x='Quarter',
+            y='Value',
+            color='Metric',
+            tooltip=['Quarter', 'Metric', alt.Tooltip('Value', format='.2f'), 'Unit']
+        ).properties(
+            width=600,
+            height=400
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+
+        # 분기별 주요 내용 표시
+        st.write("### Key Highlights for Each Quarter")
+        for quarter, highlights in quarterly_highlights.items():
+            st.subheader(quarter)
+            st.write("\n".join(["- " + highlight for highlight in highlights]))
 
 if __name__ == "__main__":
     main()
