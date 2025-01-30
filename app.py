@@ -34,7 +34,7 @@ except ImportError as e:
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 # GPT 호출 활성화/비활성화 플래그
-USE_GPT = False  # GPT 호출 비활성화
+USE_GPT = True  # GPT 호출 비활성화
 
 def get_chatgpt_response(prompt, context):
     """GPT를 사용하여 응답 생성"""
@@ -722,26 +722,32 @@ def main():
     
     # Financial Analysis 섹션
     if 'financial_analysis' not in st.session_state:
-        core_metrics_prompt = """Extract 3-4 key financial metrics from the earnings call:
-        • Focus on exact numbers and YoY changes
-        • Start each point with the most important number/change
-        • Format: "Revenue up 15% YoY to $12.3B"
-        • Keep each point to one line
-        • Include only the most significant metrics"""
+        core_metrics_prompt = """List 3 most critical financial metrics in bullet points:
+        • Format: "↑ Revenue $40.7B (+21% YoY)"
+        • Use arrows (↑/↓) to indicate direction
+        • Keep each point under 30 characters
+        • Numbers and percentages only"""
         
-        future_outlook_prompt = """Extract 3-4 key points about future outlook:
-        • Focus on specific guidance and targets
-        • Start with the most important prediction/target
-        • Include direct quotes from CEO/CFO
-        • Format: "2024 Target: $X revenue, citing 'relevant quote'"
-        • Keep each point to one line"""
+        future_outlook_prompt = """Extract 3 key forward-looking guidance points:
+        • Format:
+          📊 NII: $91B expected for 2024
+
+          💰 Expenses: $92B target
+
+          📈 Credit: 3.4% NCO rate
+
+        • Focus on:
+          1. NII forecast
+          2. Expense target
+          3. Credit outlook
+        • Numbers only, no quotes
+        • Keep each point under 25 characters"""
         
-        strategy_risks_prompt = """Extract 3-4 key strategic points and risks:
-        • Focus on concrete plans and specific challenges
-        • Start each point with the key strategy/risk
-        • Include management's direct responses
-        • Format: "Digital Banking: Investing $XB in tech, 'relevant quote'"
-        • Keep each point to one line"""
+        strategy_risks_prompt = """List 3 main strategic priorities:
+        • Format: "• Digital: +15% user growth"
+        • One metric per strategy
+        • Max 4 words per point
+        • Focus on measurable goals"""
         
         st.session_state.financial_analysis = {
             'core_metrics': get_chatgpt_response(core_metrics_prompt, text_data),
@@ -753,10 +759,33 @@ def main():
     future_outlook = st.session_state.financial_analysis['future_outlook'].replace('\n', '<br>')
     strategy_risks = st.session_state.financial_analysis['strategy_risks'].replace('\n', '<br>')
     
+    # JPMorgan Chase Q3 2024 Deep Dive 섹션
     st.markdown("""
         <div class='insights-container'>
             <div class='insights-title'>
                 📈 JPMorgan Chase Q3 2024 Deep Dive
+            </div>
+            <div style='display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;'>
+                <div class='metric-card'>
+                    <div class='metric-value'>$40.7B</div>
+                    <div class='metric-label'>Revenue</div>
+                    <div class='metric-change'>↑ 21% YoY</div>
+                </div>
+                <div class='metric-card'>
+                    <div class='metric-value'>$13.2B</div>
+                    <div class='metric-label'>Net Income</div>
+                    <div class='metric-change'>↑ 35% YoY</div>
+                </div>
+                <div class='metric-card'>
+                    <div class='metric-value'>16.8%</div>
+                    <div class='metric-label'>ROTCE</div>
+                    <div class='metric-change'>↑ 2.1pp YoY</div>
+                </div>
+                <div class='metric-card'>
+                    <div class='metric-value'>$4.33</div>
+                    <div class='metric-label'>EPS</div>
+                    <div class='metric-change'>↑ 38% YoY</div>
+                </div>
             </div>
             <div style='display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;'>
                 <div class='analysis-card'>
@@ -774,6 +803,42 @@ def main():
             </div>
         </div>
     """.format(core_metrics, future_outlook, strategy_risks), unsafe_allow_html=True)
+
+    # CSS 스타일 추가
+    st.markdown("""
+        <style>
+        .metric-card {
+            background: #363636;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #0066ff;
+            margin-bottom: 0.3rem;
+        }
+        .metric-label {
+            color: #ffffff;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        .metric-change {
+            color: #00ff88;
+            font-size: 0.8rem;
+        }
+        .analysis-card {
+            background: #363636;
+            padding: 1.2rem;
+            border-radius: 8px;
+        }
+        .analysis-card h4 {
+            color: white;
+            margin-bottom: 0.8rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # 사드바 챗봇
     with st.sidebar:
@@ -908,16 +973,12 @@ def main():
         st.subheader("☁️ GPT Word Cloud")
         
         def get_ai_keywords(text, period_type="quarterly"):
-            """GPT를 사용하여 핵식 키워드와 가중치 추출"""
+            """GPT를 사용하여 핵심 키워드와 가중치 추출"""
             if not USE_GPT:
-                # GPT 비활성화 시 기본 키워드 추출 로직 추가
-                # 예시: 간단한 키워드 추출 로직
-                keywords = {"example_keyword": 5}  # 기본 키워드 예시
-                return keywords
-
+                return {"example_keyword": 5}  # 기본 키워드 예시
+            
             try:
                 prompt = f"""Analyze this earnings call transcript and create a word cloud representation.
-
                 Task:
                 1. Extract the most significant financial terms and insights
                 2. Return only the keywords with their importance weights
@@ -934,7 +995,7 @@ def main():
                 """
                 
                 response = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": "You are a financial analyst."},
                         {"role": "user", "content": prompt}
@@ -943,7 +1004,6 @@ def main():
                     max_tokens=500
                 )
                 
-                # GPT 응답을 딕셔너리로 변환
                 keywords = {}
                 for line in response.choices[0].message.content.strip().split('\n'):
                     if ':' in line:
@@ -956,81 +1016,28 @@ def main():
                 st.error(f"Error in AI analysis: {str(e)}")
                 return {}
 
-        # 분기별 데이터 로드
-        quarterly_files = {
-            'Q3 2024': 'data/raw/JPM_2024_Q3.txt',
-            'Q2 2024': 'data/raw/JPM_2024_Q2.txt',
-            'Q1 2024': 'data/raw/JPM_2024_Q1.txt',
-            'Q4 2023': 'data/raw/JPM_2023_Q4.txt'
-        }
-        
-        # 탭 생성
-        tabs = st.tabs(list(quarterly_files.keys()) + ["Yearly View"])
-        
-        # 전체 텍스트 저장 (yearly view)
-        all_texts = []
-        
-        # 분기별 탭 처리
-        for quarter, filepath in quarterly_files.items():
-            try:
-                with open(filepath, 'r', encoding='utf-8') as file:
-                    quarter_text = file.read().strip()
-                    
-                if quarter_text:
-                    all_texts.append(quarter_text)
-                    
-                    # 해당 분기 탭에서 워드클라우드 시
-                    with tabs[list(quarterly_files.keys()).index(quarter)]:
-                        st.caption(f"AI Analysis of {quarter} Earnings Call")
-                        keywords = get_ai_keywords(quarter_text, "quarterly")
-                        
-                        if keywords:
-                            wordcloud = WordCloud(
-                                width=800,
-                                height=400,
-                                background_color='#2d2d2d',
-                                colormap='Blues',
-                                prefer_horizontal=0.7,
-                                min_font_size=10,
-                                max_font_size=50
-                            ).generate_from_frequencies(keywords)
-                            
-                            fig, ax = plt.subplots(figsize=(10,6))
-                            ax.imshow(wordcloud)
-                            ax.axis('off')
-                            ax.set_facecolor('#2d2d2d')
-                            fig.patch.set_facecolor('#2d2d2d')
-                            st.pyplot(fig)
-                            
-            except Exception as e:
-                st.error(f"Error processing {quarter}")
-        
-        # Yearly View 탭
-        with tabs[-1]:
-            if all_texts:
-                st.caption("AI Analysis of Full Year Earnings Calls")
-                yearly_text = " ".join(all_texts)
-                yearly_keywords = get_ai_keywords(yearly_text, "yearly")
+        # 워드클라우드 생성 및 표시
+        try:
+            keywords = get_ai_keywords(text_data)
+            if keywords:
+                wordcloud = WordCloud(
+                    width=800,
+                    height=400,
+                    background_color='#2d2d2d',
+                    colormap='Blues',
+                    prefer_horizontal=0.7,
+                    min_font_size=10,
+                    max_font_size=50
+                ).generate_from_frequencies(keywords)
                 
-                if yearly_keywords:
-                    wordcloud = WordCloud(
-                        width=800,
-                        height=400,
-                        background_color='#2d2d2d',
-                        colormap='Blues',
-                        prefer_horizontal=0.7,
-                        min_font_size=10,
-                        max_font_size=50
-                    ).generate_from_frequencies(yearly_keywords)
-                    
-                    fig, ax = plt.subplots(figsize=(10,6))
-                    ax.imshow(wordcloud)
-                    ax.axis('off')
-                    ax.set_facecolor('#2d2d2d')
-                    fig.patch.set_facecolor('#2d2d2d')
-                    st.pyplot(fig)
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+                fig, ax = plt.subplots(figsize=(10,6))
+                ax.imshow(wordcloud)
+                ax.axis('off')
+                ax.set_facecolor('#2d2d2d')
+                fig.patch.set_facecolor('#2d2d2d')
+                st.pyplot(fig)
+        except Exception as e:
+            st.error(f"Error generating word cloud: {str(e)}")
     
     # 새로운 시각화 섹션 추가
     st.subheader("🎭 Sentiment Analysis")
