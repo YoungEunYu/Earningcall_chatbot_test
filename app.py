@@ -165,10 +165,14 @@ def create_sentiment_viz():
     )])
     
     pie_fig.update_layout(
-        title="Sentiment Distribution",
-        plot_bgcolor='#2d2d2d',
+        title=dict(
+            text="Sentiment Distribution",
+            font=dict(color='#e6e6e6'),  # 흰색에서 밝은 회색으로 변경
+            x=0
+        ),
         paper_bgcolor='#2d2d2d',
-        font=dict(color='white')
+        plot_bgcolor='#2d2d2d',
+        font=dict(color='#e6e6e6')  # 전체 폰트 색상도 동일하게 변경
     )
     
     # 2. 키워드 바 차트
@@ -193,11 +197,16 @@ def create_sentiment_viz():
     ))
     
     keywords_fig.update_layout(
+        title=dict(
+            text="Top Keywords by Sentiment",
+            font=dict(color='#e6e6e6'),  # 밝은 회색
+            x=0,                         # 왼쪽 정렬 (0.5에서 0으로 변경)
+            xanchor='left'              # 왼쪽 기준점 설정
+        ),
         barmode='group',
-        title="Top Keywords by Sentiment",
-        plot_bgcolor='#2d2d2d',
         paper_bgcolor='#2d2d2d',
-        font=dict(color='white')
+        plot_bgcolor='#2d2d2d',
+        font=dict(color='#e6e6e6')
     )
     
     return pie_fig, keywords_fig
@@ -881,6 +890,21 @@ def main():
             color: white;
             margin-bottom: 0.8rem;
         }
+        .analysis-content {
+            color: #e6e6e6;
+            text-align: left;
+        }
+        p {
+            color: #e6e6e6 !important;
+            text-align: left !important;
+        }
+        .stMarkdown {
+            color: #e6e6e6;
+            text-align: left !important;
+        }
+        div[data-testid="stMarkdownContainer"] {
+            text-align: left !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     
@@ -1232,11 +1256,33 @@ def main():
         chart = alt.Chart(metrics_df).mark_line(point=True).encode(
             x='Quarter',
             y='Value',
-            color='Metric',
+            color=alt.Color('Metric', scale=alt.Scale(
+                domain=['Revenue', 'Net Income', 'EPS'],
+                range=['#ff4b4b', '#4b9eff', '#4bff4b']  # 빨강, 파랑, 초록
+            )),
             tooltip=['Quarter', 'Metric', alt.Tooltip('Value', format='.2f'), 'Unit']
         ).properties(
             width=600,
-            height=400
+            height=400,
+            background='#2d2d2d'  # 차트 컨테이너 배경색 추가
+        ).configure_view(
+            fill='#2d2d2d',  # 차트 배경색
+            stroke=None      # 테두리 제거
+        ).configure_axis(
+            grid=True,
+            gridColor='#444444',    # 그리드 색상
+            domainColor='white',    # 축 색상
+            tickColor='white',      # 틱 마크 색상
+            labelColor='white',     # 레이블 색상
+            titleColor='white'      # 축 제목 색상
+        ).configure_legend(
+            labelColor='white',     # 범례 레이블 색상
+            titleColor='white',     # 범례 제목 색상
+            padding=10,            # 범례 패딩
+            cornerRadius=5,        # 범례 모서리 둥글게
+            orient='top-right',    # 범례 위치
+            fillColor='#2d2d2d',   # 범례 배경색
+            strokeColor='#444444'  # 범례 테두리 색상
         )
 
         st.altair_chart(chart, use_container_width=True)
