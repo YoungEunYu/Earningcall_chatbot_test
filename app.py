@@ -607,6 +607,15 @@ def get_ai_keywords(text, period_type="quarterly"):
         st.error(f"Error in AI analysis: {str(e)}")
         return {}
 
+def get_sentiment_text(score):
+    """sentiment score를 텍스트로 변환하는 함수"""
+    if score > 0.2:
+        return "Positive", "#00ff88"
+    elif score < -0.2:
+        return "Negative", "#ff4444"
+    else:
+        return "Neutral", "#aaaaaa"
+
 def main():
     # 페이지 설정
     st.set_page_config(
@@ -1143,25 +1152,27 @@ def main():
         
         for _, row in barnum_statements.iterrows():
             text = row['text'].strip()
+            sentiment_text, sentiment_color = get_sentiment_text(row['sentiment_score'])
+            
             if len(text.split()) > 6:
                 if statements_shown < 3:
                     st.markdown(f"""
                         <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
-                            <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {row['sentiment_score']:.3f}</div>
+                            <div style='color: {sentiment_color}; margin-bottom: 5px;'>Sentiment: {sentiment_text}</div>
                             <div>{text}</div>
                         </div>
                     """, unsafe_allow_html=True)
                     statements_shown += 1
                 else:
-                    remaining_statements.append((text, row['sentiment_score']))
+                    remaining_statements.append((text, sentiment_text, sentiment_color))
         
         # 나머지 발언들은 expander에 넣기
         if remaining_statements:
             with st.expander("Show More Statements", expanded=False):
-                for text, score in remaining_statements:
+                for text, sentiment_text, sentiment_color in remaining_statements:
                     st.markdown(f"""
                         <div style='background: #363636; padding: 15px; border-radius: 5px; margin: 10px 0;'>
-                            <div style='color: #8ab4f8; margin-bottom: 5px;'>Sentiment Score: {score:.3f}</div>
+                            <div style='color: {sentiment_color}; margin-bottom: 5px;'>Sentiment: {sentiment_text}</div>
                             <div>{text}</div>
                         </div>
                     """, unsafe_allow_html=True)
