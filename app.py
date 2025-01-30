@@ -554,6 +554,50 @@ def extract_strategic_focus(text):
         
     return strategic
 
+def get_ai_keywords(text, period_type="quarterly"):
+    """GPT를 사용하여 핵심 키워드와 가중치 추출"""
+    if not USE_GPT:
+        return {"example_keyword": 5}  # 기본 키워드 예시
+    
+    try:
+        prompt = f"""Analyze this earnings call transcript and create a word cloud representation.
+        Task:
+        1. Extract the most significant financial terms and insights
+        2. Return only the keywords with their importance weights
+        3. Focus on {period_type} performance and trends
+        4. Remove all common words, numbers, and company names
+        5. Combine related concepts into compound terms (e.g., 'credit_quality', 'market_share')
+
+        Format your response ONLY as:
+        keyword1:weight
+        keyword2:weight
+        (weights from 1-10, higher = more important)
+
+        Transcript: {text[:4000]}...
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a financial analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=500
+        )
+        
+        keywords = {}
+        for line in response.choices[0].message.content.strip().split('\n'):
+            if ':' in line:
+                word, weight = line.strip().split(':')
+                keywords[word.strip()] = int(weight)
+        
+        return keywords
+            
+    except Exception as e:
+        st.error(f"Error in AI analysis: {str(e)}")
+        return {}
+
 def main():
     # 페이지 설정
     st.set_page_config(
@@ -972,72 +1016,79 @@ def main():
     with col2:
         st.subheader("☁️ GPT Word Cloud")
         
-        def get_ai_keywords(text, period_type="quarterly"):
-            """GPT를 사용하여 핵심 키워드와 가중치 추출"""
-            if not USE_GPT:
-                return {"example_keyword": 5}  # 기본 키워드 예시
-            
+        # 분기별 데이터 로드
+        quarterly_files = {
+            'Q3 2024': 'data/raw/JPM_2024_Q3.txt',
+            'Q2 2024': 'data/raw/JPM_2024_Q2.txt',
+            'Q1 2024': 'data/raw/JPM_2024_Q1.txt',
+            'Q4 2023': 'data/raw/JPM_2023_Q4.txt'
+        }
+        
+        # 탭 생성
+        tabs = st.tabs(list(quarterly_files.keys()) + ["Yearly View"])
+        
+        # 전체 텍스트 저장 (yearly view용)
+        all_texts = []
+        
+        # 분기별 탭 처리
+        for quarter, filepath in quarterly_files.items():
             try:
-                prompt = f"""Analyze this earnings call transcript and create a word cloud representation.
-                Task:
-                1. Extract the most significant financial terms and insights
-                2. Return only the keywords with their importance weights
-                3. Focus on {period_type} performance and trends
-                4. Remove all common words, numbers, and company names
-                5. Combine related concepts into compound terms (e.g., 'credit_quality', 'market_share')
-
-                Format your response ONLY as:
-                keyword1:weight
-                keyword2:weight
-                (weights from 1-10, higher = more important)
-
-                Transcript: {text[:4000]}...
-                """
-                
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a financial analyst."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.3,
-                    max_tokens=500
-                )
-                
-                keywords = {}
-                for line in response.choices[0].message.content.strip().split('\n'):
-                    if ':' in line:
-                        word, weight = line.strip().split(':')
-                        keywords[word.strip()] = int(weight)
-                
-                return keywords
-                
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    quarter_text = file.read().strip()
+                    
+                if quarter_text:
+                    all_texts.append(quarter_text)
+                    
+                    # 해당 분기 탭에서 워드클라우드 표시
+                    with tabs[list(quarterly_files.keys()).index(quarter)]:
+                        st.caption(f"AI Analysis of {quarter} Earnings Call")
+                        keywords = get_ai_keywords(quarter_text, "quarterly")
+                        
+                        if keywords:
+                            wordcloud = WordCloud(
+                                width=800,
+                                height=400,
+                                background_color='#2d2d2d',
+                                colormap='Blues',
+                                prefer_horizontal=0.7,
+                                min_font_size=10,
+                                max_font_size=50
+                            ).generate_from_frequencies(keywords)
+                            
+                            fig, ax = plt.subplots(figsize=(10,6))
+                            ax.imshow(wordcloud)
+                            ax.axis('off')
+                            ax.set_facecolor('#2d2d2d')
+                            fig.patch.set_facecolor('#2d2d2d')
+                            st.pyplot(fig)
+                            
             except Exception as e:
-                st.error(f"Error in AI analysis: {str(e)}")
-                return {}
-
-        # 워드클라우드 생성 및 표시
-        try:
-            keywords = get_ai_keywords(text_data)
-            if keywords:
-                wordcloud = WordCloud(
-                    width=800,
-                    height=400,
-                    background_color='#2d2d2d',
-                    colormap='Blues',
-                    prefer_horizontal=0.7,
-                    min_font_size=10,
-                    max_font_size=50
-                ).generate_from_frequencies(keywords)
+                st.error(f"Error processing {quarter}: {str(e)}")
+        
+        # Yearly View 탭
+        with tabs[-1]:
+            if all_texts:
+                st.caption("AI Analysis of Full Year Earnings Calls")
+                yearly_text = " ".join(all_texts)
+                yearly_keywords = get_ai_keywords(yearly_text, "yearly")
                 
-                fig, ax = plt.subplots(figsize=(10,6))
-                ax.imshow(wordcloud)
-                ax.axis('off')
-                ax.set_facecolor('#2d2d2d')
-                fig.patch.set_facecolor('#2d2d2d')
-                st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Error generating word cloud: {str(e)}")
+                if yearly_keywords:
+                    wordcloud = WordCloud(
+                        width=800,
+                        height=400,
+                        background_color='#2d2d2d',
+                        colormap='Blues',
+                        prefer_horizontal=0.7,
+                        min_font_size=10,
+                        max_font_size=50
+                    ).generate_from_frequencies(yearly_keywords)
+                    
+                    fig, ax = plt.subplots(figsize=(10,6))
+                    ax.imshow(wordcloud)
+                    ax.axis('off')
+                    ax.set_facecolor('#2d2d2d')
+                    fig.patch.set_facecolor('#2d2d2d')
+                    st.pyplot(fig)
     
     # 새로운 시각화 섹션 추가
     st.subheader("🎭 Sentiment Analysis")
@@ -1149,7 +1200,7 @@ def main():
             },
             'Q1 2024': {
                 '🌐 International': 'Strong net inflows led by equities and fixed income',
-                '💻 Digital': 'Digital platform growth, increased mobile adoption',
+                '�� Digital': 'Digital platform growth, increased mobile adoption',
                 '🏦 Network': 'Continued branch expansion in key markets'
             },
             'Q4 2023': {
